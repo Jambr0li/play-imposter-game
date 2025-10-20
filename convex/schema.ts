@@ -13,6 +13,7 @@ export default defineSchema({
     ),
     word: v.string(),
     category: v.string(),
+    categoryPreference: v.optional(v.string()), // "Random", "Food", "Location", "Animal", "Object"
     imposterId: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_code", ["code"]),

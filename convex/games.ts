@@ -65,7 +65,7 @@ const WORD_CATEGORIES = {
     "ZEBRA",
     "RABBIT",
   ],
-  Thing: [
+  Object: [
     "CAR",
     "PHONE",
     "LAPTOP",
@@ -87,15 +87,24 @@ const WORD_CATEGORIES = {
 type Category = keyof typeof WORD_CATEGORIES;
 
 // Helper function to get a random word with category
-function getRandomWordWithCategory(): { word: string; category: Category } {
+function getRandomWordWithCategory(preferredCategory?: string): { word: string; category: Category } {
   const categories = Object.keys(WORD_CATEGORIES) as Category[];
-  const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-  const wordsInCategory = WORD_CATEGORIES[randomCategory];
+  
+  // If a specific category is preferred and valid, use it
+  let selectedCategory: Category;
+  if (preferredCategory && preferredCategory !== "Random" && categories.includes(preferredCategory as Category)) {
+    selectedCategory = preferredCategory as Category;
+  } else {
+    // Otherwise pick randomly
+    selectedCategory = categories[Math.floor(Math.random() * categories.length)];
+  }
+  
+  const wordsInCategory = WORD_CATEGORIES[selectedCategory];
   const randomWord = wordsInCategory[Math.floor(Math.random() * wordsInCategory.length)];
   
   return {
     word: randomWord,
-    category: randomCategory,
+    category: selectedCategory,
   };
 }
 
@@ -130,6 +139,7 @@ export const createGame = mutation({
       status: "waiting",
       word,
       category,
+      categoryPreference: "Random", // Default to random
       createdAt: Date.now(),
     });
 
@@ -243,12 +253,17 @@ export const setReady = mutation({
         .first();
 
       if (game && game.status === "waiting") {
+        // Generate word based on category preference
+        const { word, category } = getRandomWordWithCategory(game.categoryPreference);
+        
         // Pick a random imposter
         const randomIndex = Math.floor(Math.random() * allPlayers.length);
         const imposter = allPlayers[randomIndex];
 
         await ctx.db.patch(game._id, {
           status: "playing",
+          word,
+          category,
           imposterId: imposter.playerId,
         });
       }
@@ -291,12 +306,17 @@ export const startGame = mutation({
       throw new Error("Need at least 3 players to start");
     }
 
+    // Generate word based on category preference
+    const { word, category } = getRandomWordWithCategory(game.categoryPreference);
+    
     // Pick a random imposter
     const randomIndex = Math.floor(Math.random() * players.length);
     const imposter = players[randomIndex];
 
     await ctx.db.patch(game._id, {
       status: "playing",
+      word,
+      category,
       imposterId: imposter.playerId,
     });
 
@@ -352,6 +372,44 @@ export const leaveGame = mutation({
   },
 });
 
+// Set category preference (host only)
+export const setCategoryPreference = mutation({
+  args: {
+    gameCode: v.string(),
+    hostId: v.string(),
+    categoryPreference: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode.toUpperCase()))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    if (game.hostId !== args.hostId) {
+      throw new Error("Only the host can change category preference");
+    }
+
+    if (game.status !== "waiting") {
+      throw new Error("Cannot change category after game has started");
+    }
+
+    const validCategories = ["Random", "Food", "Location", "Animal", "Object"];
+    if (!validCategories.includes(args.categoryPreference)) {
+      throw new Error("Invalid category");
+    }
+
+    await ctx.db.patch(game._id, {
+      categoryPreference: args.categoryPreference,
+    });
+
+    return { success: true };
+  },
+});
+
 // Restart the game (host only)
 export const restartGame = mutation({
   args: {
@@ -388,7 +446,7 @@ export const restartGame = mutation({
     }
 
     // Reset game state with new word and category
-    const { word, category } = getRandomWordWithCategory();
+    const { word, category } = getRandomWordWithCategory(game.categoryPreference);
     await ctx.db.patch(game._id, {
       status: "waiting",
       word,

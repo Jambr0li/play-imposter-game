@@ -35,6 +35,14 @@ import {
   AlertCircle,
   RotateCcw,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function GameRoom() {
   const params = useParams();
@@ -56,6 +64,7 @@ export default function GameRoom() {
   const setReady = useMutation(api.games.setReady);
   const leaveGame = useMutation(api.games.leaveGame);
   const restartGame = useMutation(api.games.restartGame);
+  const setCategoryPreference = useMutation(api.games.setCategoryPreference);
 
   useEffect(() => {
     const id = localStorage.getItem("playerId");
@@ -117,6 +126,20 @@ export default function GameRoom() {
     } catch (error: any) {
       console.error("Error restarting game:", error);
       alert(error.message || "Failed to restart game");
+    }
+  };
+
+  const handleCategoryChange = async (category: string) => {
+    if (!code || !playerId) return;
+
+    try {
+      await setCategoryPreference({
+        gameCode: code,
+        hostId: playerId,
+        categoryPreference: category,
+      });
+    } catch (error: any) {
+      console.error("Error setting category:", error);
     }
   };
 
@@ -363,6 +386,28 @@ export default function GameRoom() {
             )}
 
             <Separator />
+
+            {/* Category Selection (Host Only) */}
+            {currentPlayer?.isHost && (
+              <div className="space-y-2">
+                <Label htmlFor="category-select">Category</Label>
+                <Select
+                  value={game.categoryPreference || "Random"}
+                  onValueChange={handleCategoryChange}
+                >
+                  <SelectTrigger id="category-select">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Random">Random</SelectItem>
+                    <SelectItem value="Food">Food</SelectItem>
+                    <SelectItem value="Location">Location</SelectItem>
+                    <SelectItem value="Animal">Animal</SelectItem>
+                    <SelectItem value="Object">Object</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Players List */}
             <div>

@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HostPage() {
   const router = useRouter();
@@ -114,12 +115,24 @@ export default function HostPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4">
       <Card className="max-w-md w-full shadow-lg">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-12 w-12 animate-spin mb-4" />
-          <p className="text-lg font-medium">Creating game...</p>
+        <CardHeader>
+          <Skeleton className="h-7 w-32 mx-auto" />
+          <Skeleton className="h-4 w-48 mx-auto mt-2" />
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-10 w-full" />
+          </div>
         </CardContent>
+
+        <CardFooter className="flex flex-col gap-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </CardFooter>
       </Card>
     </main>
   );

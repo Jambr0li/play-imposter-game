@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +44,7 @@ export default function GameRoom() {
   const [playerId, setPlayerId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const game = useQuery(api.games.getGame, code ? { code } : "skip");
   const players = useQuery(api.games.getPlayers, code ? { code } : "skip");
@@ -96,10 +99,12 @@ export default function GameRoom() {
     if (!code || !playerId) return;
 
     try {
+      setIsLeaving(true);
       await leaveGame({ gameCode: code, playerId });
       router.push("/");
     } catch (error) {
       console.error("Error leaving game:", error);
+      setIsLeaving(false);
     }
   };
 
@@ -115,20 +120,60 @@ export default function GameRoom() {
     }
   };
 
-  if (!mounted) {
+  if (!mounted || game === undefined || isLeaving) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md w-full shadow-lg">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin mb-4" />
-            <p className="text-lg font-medium">Loading...</p>
-          </CardContent>
-        </Card>
+      <main className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="max-w-2xl w-full space-y-6">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <Skeleton className="h-9 w-48 mx-auto" />
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              {/* Game Code Skeleton */}
+              <Card className="bg-muted">
+                <CardContent className="text-center py-6 space-y-3">
+                  <Skeleton className="h-4 w-24 mx-auto" />
+                  <Skeleton className="h-16 w-64 mx-auto" />
+                  <Skeleton className="h-3 w-48 mx-auto" />
+                </CardContent>
+              </Card>
+
+              <Separator />
+
+              {/* Players List Skeleton */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    >
+                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-5 w-16" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex flex-col gap-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </CardFooter>
+          </Card>
+        </div>
       </main>
     );
   }
 
-  if (!game) {
+  // Game not found - query returned but game doesn't exist
+  if (game === null) {
     return (
       <main className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full shadow-lg">
@@ -296,6 +341,15 @@ export default function GameRoom() {
                 </p>
               </CardContent>
             </Card>
+
+            {/* Development Test Mode Link */}
+            {process.env.NODE_ENV === "development" && (
+              <Button asChild variant="outline" size="sm" className="w-full">
+                <Link href={`/test/${code}`} target="_blank">
+                  🧪 Open Test Mode (3 Players)
+                </Link>
+              </Button>
+            )}
 
             <Separator />
 

@@ -16,12 +16,22 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Crown,
   Users,
   Check,
   Loader2,
   LogOut,
   AlertCircle,
+  RotateCcw,
 } from "lucide-react";
 
 export default function GameRoom() {
@@ -31,6 +41,7 @@ export default function GameRoom() {
 
   const [playerId, setPlayerId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
+  const [showRestartDialog, setShowRestartDialog] = useState(false);
 
   const game = useQuery(api.games.getGame, code ? { code } : "skip");
   const players = useQuery(api.games.getPlayers, code ? { code } : "skip");
@@ -41,6 +52,7 @@ export default function GameRoom() {
 
   const setReady = useMutation(api.games.setReady);
   const leaveGame = useMutation(api.games.leaveGame);
+  const restartGame = useMutation(api.games.restartGame);
 
   useEffect(() => {
     const id = localStorage.getItem("playerId");
@@ -88,6 +100,18 @@ export default function GameRoom() {
       router.push("/");
     } catch (error) {
       console.error("Error leaving game:", error);
+    }
+  };
+
+  const handleRestartGame = async () => {
+    if (!code || !playerId) return;
+
+    try {
+      await restartGame({ gameCode: code, hostId: playerId });
+      setShowRestartDialog(false);
+    } catch (error: any) {
+      console.error("Error restarting game:", error);
+      alert(error.message || "Failed to restart game");
     }
   };
 
@@ -199,6 +223,38 @@ export default function GameRoom() {
               ))}
             </CardContent>
           </Card>
+
+          {/* Show restart button only to host */}
+          {currentPlayer?.isHost && (
+            <Dialog open={showRestartDialog} onOpenChange={setShowRestartDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="lg" className="w-full">
+                  <RotateCcw className="mr-2" />
+                  Start New Round
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Start a New Round?</DialogTitle>
+                  <DialogDescription>
+                    This will reset the game and all players will need to ready up again.
+                    A new word will be chosen and a new imposter will be selected.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowRestartDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleRestartGame}>
+                    Start New Round
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
 
           <Button
             onClick={handleLeaveGame}

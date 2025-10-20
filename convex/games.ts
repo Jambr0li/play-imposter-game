@@ -290,6 +290,52 @@ export const leaveGame = mutation({
   },
 });
 
+// Restart the game (host only)
+export const restartGame = mutation({
+  args: {
+    gameCode: v.string(),
+    hostId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Find the game
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    // Verify caller is the host
+    if (game.hostId !== args.hostId) {
+      throw new Error("Only the host can restart the game");
+    }
+
+    // Get all players
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode))
+      .collect();
+
+    // Reset all players to not ready
+    for (const player of players) {
+      await ctx.db.patch(player._id, {
+        isReady: false,
+      });
+    }
+
+    // Reset game state with new word
+    await ctx.db.patch(game._id, {
+      status: "waiting",
+      word: getRandomWord(), // New word for new round
+      imposterId: undefined, // Clear imposter
+    });
+
+    return { success: true };
+  },
+});
+
 // Get game details
 export const getGame = query({
   args: { code: v.string() },

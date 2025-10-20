@@ -52,6 +52,7 @@ export default function GameRoom() {
   const [playerId, setPlayerId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
   const game = useQuery(api.games.getGame, code ? { code } : "skip");
@@ -115,6 +116,7 @@ export default function GameRoom() {
     try {
       setIsLeaving(true);
       await leaveGame({ gameCode: code, playerId });
+      setShowLeaveDialog(false);
       router.push("/");
     } catch (error) {
       console.error("Error leaving game:", error);
@@ -350,15 +352,37 @@ export default function GameRoom() {
             </Dialog>
           )}
 
-          <Button
-            onClick={handleLeaveGame}
-            variant="outline"
-            className="w-full"
-            size="lg"
-          >
-            <LogOut className="mr-2" />
-            Leave Game
-          </Button>
+          <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <LogOut className="mr-2" />
+                Leave Game
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Leave Game?</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to leave the game?
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowLeaveDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleLeaveGame} variant="destructive">
+                  Leave Game
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
     );
@@ -541,14 +565,36 @@ export default function GameRoom() {
               )}
             </Button>
 
-            <Button
-              onClick={handleLeaveGame}
-              variant="outline"
-              className="w-full"
-            >
-              <LogOut className="mr-2" />
-              Leave Game
-            </Button>
+            <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                >
+                  <LogOut className="mr-2" />
+                  Leave Game
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Leave Game?</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to leave the game?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowLeaveDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleLeaveGame} variant="destructive">
+                    Leave Game
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardFooter>
         </Card>
       </div>

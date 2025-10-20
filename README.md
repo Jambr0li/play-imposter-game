@@ -100,9 +100,9 @@ npm run dev
 - Game automatically starts when all players are ready (minimum 3 players)
 
 ### 5. Playing Phase
-- All players see the same word, except one random player
-- The imposter sees "IMPOSTER" in red
-- Players discuss and try to figure out who the imposter is
+- All players see the same word, except the imposter(s)
+- Imposters see "???" and the category
+- Players discuss and try to figure out who the imposters are
 
 ## Database Schema
 
@@ -111,7 +111,11 @@ npm run dev
 - `hostId`: ID of the player who created the game
 - `status`: "waiting" | "playing" | "finished"
 - `word`: The word shown to non-imposter players
-- `imposterId`: ID of the player who is the imposter
+- `category`: The category of the word
+- `categoryPreference`: Host's preferred category ("Random", "Food", "Location", "Animal", "Object")
+- `imposterIds`: Array of player IDs who are imposters
+- `imposterCount`: Number of imposters selected by host (defaults to 1)
+- `usedWords`: Array of previously used words (to avoid repeats)
 - `createdAt`: Timestamp
 
 ### Players Table

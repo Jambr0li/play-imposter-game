@@ -60,11 +60,16 @@ export default function GameRoom() {
     api.games.getPlayerWord,
     code && playerId ? { gameCode: code, playerId } : "skip"
   );
+  const imposterOptions = useQuery(
+    api.games.getImposterCountOptions,
+    code ? { code } : "skip"
+  );
 
   const setReady = useMutation(api.games.setReady);
   const leaveGame = useMutation(api.games.leaveGame);
   const restartGame = useMutation(api.games.restartGame);
   const setCategoryPreference = useMutation(api.games.setCategoryPreference);
+  const setImposterCount = useMutation(api.games.setImposterCount);
 
   useEffect(() => {
     const id = localStorage.getItem("playerId");
@@ -140,6 +145,21 @@ export default function GameRoom() {
       });
     } catch (error: any) {
       console.error("Error setting category:", error);
+    }
+  };
+
+  const handleImposterCountChange = async (count: string) => {
+    if (!code || !playerId) return;
+
+    try {
+      await setImposterCount({
+        gameCode: code,
+        hostId: playerId,
+        imposterCount: parseInt(count),
+      });
+    } catch (error: any) {
+      console.error("Error setting imposter count:", error);
+      alert(error.message || "Failed to set imposter count");
     }
   };
 
@@ -228,6 +248,8 @@ export default function GameRoom() {
   // Playing phase - show the word
   if (game.status === "playing" && playerWord) {
     const { category, word, isImposter } = playerWord;
+    const imposterIds = game.imposterIds || [];
+    const imposterCount = imposterIds.length;
 
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -249,7 +271,7 @@ export default function GameRoom() {
                     ???
                   </div>
                   <p className="text-destructive font-semibold text-lg">
-                    You're the imposter!
+                    You're {imposterCount > 1 ? "an" : "the"} imposter!
                   </p>
                   <p className="text-sm text-muted-foreground px-4">
                     Guess what word the others are thinking about in this category
@@ -266,7 +288,7 @@ export default function GameRoom() {
               <p className="text-center text-muted-foreground">
                 {isImposter
                   ? "🤫 Try to blend in without knowing the word!"
-                  : "One player doesn't know the word!"}
+                  : `${imposterCount} player${imposterCount > 1 ? "s don't" : " doesn't"} know the word!`}
               </p>
             </CardFooter>
           </Card>
@@ -387,25 +409,61 @@ export default function GameRoom() {
 
             <Separator />
 
-            {/* Category Selection (Host Only) */}
+            {/* Host Settings */}
             {currentPlayer?.isHost && (
-              <div className="space-y-2">
-                <Label htmlFor="category-select">Category</Label>
-                <Select
-                  value={game.categoryPreference || "Random"}
-                  onValueChange={handleCategoryChange}
-                >
-                  <SelectTrigger id="category-select">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Random">Random</SelectItem>
-                    <SelectItem value="Food">Food</SelectItem>
-                    <SelectItem value="Location">Location</SelectItem>
-                    <SelectItem value="Animal">Animal</SelectItem>
-                    <SelectItem value="Object">Object</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-4">
+                {/* Category Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="category-select">Category</Label>
+                  <Select
+                    value={game.categoryPreference || "Random"}
+                    onValueChange={handleCategoryChange}
+                  >
+                    <SelectTrigger id="category-select">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Random">Random</SelectItem>
+                      <SelectItem value="Food">Food</SelectItem>
+                      <SelectItem value="Location">Location</SelectItem>
+                      <SelectItem value="Animal">Animal</SelectItem>
+                      <SelectItem value="Object">Object</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Imposter Count Selection */}
+                {imposterOptions && imposterOptions.max >= 1 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="imposter-select">
+                      Number of Imposters
+                      {imposterOptions.playerCount < 3 && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          (Need {3 - imposterOptions.playerCount} more player{3 - imposterOptions.playerCount !== 1 ? 's' : ''})
+                        </span>
+                      )}
+                    </Label>
+                    <Select
+                      value={String(game.imposterCount || 1)}
+                      onValueChange={handleImposterCountChange}
+                      disabled={imposterOptions.playerCount < 3}
+                    >
+                      <SelectTrigger id="imposter-select">
+                        <SelectValue placeholder="Select imposters" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from(
+                          { length: imposterOptions.max },
+                          (_, i) => i + 1
+                        ).map((count) => (
+                          <SelectItem key={count} value={String(count)}>
+                            {count} Imposter{count > 1 ? "s" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             )}
 

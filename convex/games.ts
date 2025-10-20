@@ -223,6 +223,11 @@ const WORD_CATEGORIES = {
 
 type Category = keyof typeof WORD_CATEGORIES;
 
+// Helper function to calculate max imposters (should leave at least 2 non-imposters)
+function getMaxImposterCount(playerCount: number): number {
+  return Math.max(1, playerCount - 2);
+}
+
 // Helper function to get a random word with category
 function getRandomWordWithCategory(
   preferredCategory?: string,
@@ -316,6 +321,7 @@ export const createGame = mutation({
       word,
       category,
       categoryPreference: "Random", // Default to random
+      imposterCount: 1, // Default to 1 imposter
       usedWords: [],
       createdAt: Date.now(),
     });
@@ -436,16 +442,22 @@ export const setReady = mutation({
           game.usedWords || []
         );
         
-        // Pick a random imposter
-        const randomIndex = Math.floor(Math.random() * allPlayers.length);
-        const imposter = allPlayers[randomIndex];
+        // Determine number of imposters
+        const desiredCount = game.imposterCount || 1;
+        const maxCount = getMaxImposterCount(allPlayers.length);
+        const imposterCount = Math.min(desiredCount, maxCount);
+        
+        // Pick random imposters
+        const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
+        const imposters = shuffled.slice(0, imposterCount);
+        const imposterIds = imposters.map(p => p.playerId);
 
         await ctx.db.patch(game._id, {
           status: "playing",
           word,
           category,
           usedWords: updatedUsedWords,
-          imposterId: imposter.playerId,
+          imposterIds,
         });
       }
     }
@@ -493,16 +505,22 @@ export const startGame = mutation({
       game.usedWords || []
     );
     
-    // Pick a random imposter
-    const randomIndex = Math.floor(Math.random() * players.length);
-    const imposter = players[randomIndex];
+    // Determine number of imposters
+    const desiredCount = game.imposterCount || 1;
+    const maxCount = getMaxImposterCount(players.length);
+    const imposterCount = Math.min(desiredCount, maxCount);
+    
+    // Pick random imposters
+    const shuffled = [...players].sort(() => Math.random() - 0.5);
+    const imposters = shuffled.slice(0, imposterCount);
+    const imposterIds = imposters.map(p => p.playerId);
 
     await ctx.db.patch(game._id, {
       status: "playing",
       word,
       category,
       usedWords: updatedUsedWords,
-      imposterId: imposter.playerId,
+      imposterIds,
     });
 
     return { success: true };
@@ -595,6 +613,55 @@ export const setCategoryPreference = mutation({
   },
 });
 
+// Set imposter count preference (host only)
+export const setImposterCount = mutation({
+  args: {
+    gameCode: v.string(),
+    hostId: v.string(),
+    imposterCount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode.toUpperCase()))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    if (game.hostId !== args.hostId) {
+      throw new Error("Only the host can change imposter count");
+    }
+
+    if (game.status !== "waiting") {
+      throw new Error("Cannot change imposter count after game has started");
+    }
+
+    // Get current player count to validate
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .collect();
+    
+    const maxCount = getMaxImposterCount(players.length);
+    
+    if (args.imposterCount < 1) {
+      throw new Error("Must have at least 1 imposter");
+    }
+    
+    if (args.imposterCount > maxCount) {
+      throw new Error(`Too many imposters for ${players.length} players (max: ${maxCount})`);
+    }
+
+    await ctx.db.patch(game._id, {
+      imposterCount: args.imposterCount,
+    });
+
+    return { success: true };
+  },
+});
+
 // Restart the game (host only)
 export const restartGame = mutation({
   args: {
@@ -633,7 +700,7 @@ export const restartGame = mutation({
     // Reset game state (word will be selected when game starts)
     await ctx.db.patch(game._id, {
       status: "waiting",
-      imposterId: undefined, // Clear imposter
+      imposterIds: undefined,
     });
 
     return { success: true };
@@ -663,6 +730,26 @@ export const getPlayers = query({
   },
 });
 
+// Get valid imposter count options for a game
+export const getImposterCountOptions = query({
+  args: { code: v.string() },
+  handler: async (ctx, args) => {
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.code.toUpperCase()))
+      .collect();
+    
+    const playerCount = players.length;
+    const maxCount = getMaxImposterCount(playerCount);
+    
+    return {
+      min: 1,
+      max: maxCount,
+      playerCount,
+    };
+  },
+});
+
 // Get the word for a specific player
 export const getPlayerWord = query({
   args: {
@@ -683,8 +770,12 @@ export const getPlayerWord = query({
       return null;
     }
 
+    // Check if player is an imposter
+    const imposterIds = game.imposterIds || [];
+    const isImposter = imposterIds.includes(args.playerId);
+
     // Return category for everyone, word only for non-imposters
-    if (game.imposterId === args.playerId) {
+    if (isImposter) {
       return {
         category: game.category,
         word: null,

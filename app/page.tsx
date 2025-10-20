@@ -40,7 +40,7 @@ export default function Home() {
 
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-4">
             <Users className="size-4" />
-            <span>3-10 players • One imposter per game</span>
+            <span>3-10 players</span>
           </div>
         </CardContent>
       </Card>

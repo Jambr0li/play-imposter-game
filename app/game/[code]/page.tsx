@@ -268,11 +268,8 @@ export default function GameRoom() {
               {isImposter ? (
                 <div className="space-y-4">
                   <div className="text-6xl md:text-8xl font-bold text-destructive">
-                    ???
+                    IMPOSTER
                   </div>
-                  <p className="text-destructive font-semibold text-lg">
-                    You're {imposterCount > 1 ? "an" : "the"} imposter!
-                  </p>
                   <p className="text-sm text-muted-foreground px-4">
                     Guess what word the others are thinking about in this category
                   </p>
@@ -287,8 +284,8 @@ export default function GameRoom() {
             <CardFooter className="justify-center pt-2">
               <p className="text-center text-muted-foreground">
                 {isImposter
-                  ? "🤫 Try to blend in without knowing the word!"
-                  : `${imposterCount} player${imposterCount > 1 ? "s don't" : " doesn't"} know the word!`}
+                  ? "Goodluck!"
+                  : ''}
               </p>
             </CardFooter>
           </Card>
@@ -337,10 +334,6 @@ export default function GameRoom() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Start a New Round?</DialogTitle>
-                  <DialogDescription>
-                    This will reset the game and all players will need to ready up again.
-                    A new word will be chosen and a new imposter will be selected.
-                  </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                   <Button

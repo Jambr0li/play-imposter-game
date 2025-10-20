@@ -204,35 +204,46 @@ export default function GameRoom() {
 
   // Playing phase - show the word
   if (game.status === "playing" && playerWord) {
-    const isImposter = playerWord === "IMPOSTER";
+    const { category, word, isImposter } = playerWord;
 
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
         <div className="max-w-2xl w-full space-y-6">
           <Card
             className={`${
-              isImposter ? "border-destructive" : ""
+              isImposter ? "border-destructive border-2" : ""
             } shadow-lg animate-fadeIn`}
           >
-            <CardHeader className="text-center pb-2">
-              <CardDescription>
-                Your word is:
-              </CardDescription>
+            <CardHeader className="text-center space-y-2">
+              <CardDescription className="text-sm">Category:</CardDescription>
+              <CardTitle className="text-3xl">{category}</CardTitle>
             </CardHeader>
+            
             <CardContent className="text-center py-8">
-              <div
-                className={`text-6xl md:text-8xl font-bold ${
-                  isImposter ? "text-destructive" : ""
-                }`}
-              >
-                {playerWord}
-              </div>
+              {isImposter ? (
+                <div className="space-y-4">
+                  <div className="text-6xl md:text-8xl font-bold text-destructive">
+                    ???
+                  </div>
+                  <p className="text-destructive font-semibold text-lg">
+                    You're the imposter!
+                  </p>
+                  <p className="text-sm text-muted-foreground px-4">
+                    Guess what word the others are thinking about in this category
+                  </p>
+                </div>
+              ) : (
+                <div className="text-6xl md:text-8xl font-bold">
+                  {word}
+                </div>
+              )}
             </CardContent>
+            
             <CardFooter className="justify-center pt-2">
               <p className="text-center text-muted-foreground">
                 {isImposter
-                  ? "🤫 Keep it secret! Everyone else has a different word."
-                  : "One player is the imposter with a different word!"}
+                  ? "🤫 Try to blend in without knowing the word!"
+                  : "One player doesn't know the word!"}
               </p>
             </CardFooter>
           </Card>

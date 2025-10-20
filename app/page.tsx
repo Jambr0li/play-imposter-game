@@ -12,7 +12,7 @@ export default function Home() {
         <CardContent className="space-y-8 pt-12 pb-10">
           <div className="space-y-4">
             <h1 className="text-6xl font-bold">
-              Imposter
+              Who's the Imposter?
             </h1>
             <p className="text-lg text-muted-foreground">
               Find the imposter among your friends

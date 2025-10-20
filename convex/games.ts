@@ -12,31 +12,91 @@ function generateGameCode(): string {
   return code;
 }
 
-// Helper function to get a random word for the game
-function getRandomWord(): string {
-  const words = [
+// Define categories and their words
+const WORD_CATEGORIES = {
+  Food: [
     "PIZZA",
-    "GUITAR",
-    "OCEAN",
-    "CASTLE",
-    "ROBOT",
-    "DRAGON",
-    "COFFEE",
-    "RAINBOW",
+    "BURGER",
+    "SUSHI",
+    "PASTA",
+    "TACO",
+    "SANDWICH",
+    "SALAD",
+    "SOUP",
+    "STEAK",
+    "CHICKEN",
+    "RICE",
+    "NOODLES",
+    "BREAD",
+    "CHEESE",
+    "CHOCOLATE",
+  ],
+  Location: [
+    "BEACH",
     "MOUNTAIN",
-    "BUTTERFLY",
-    "TELESCOPE",
-    "VOLCANO",
-    "PENGUIN",
-    "BANANA",
-    "LAPTOP",
-    "SPACESHIP",
-    "THUNDER",
-    "CRYSTAL",
+    "DESERT",
+    "FOREST",
+    "CITY",
+    "VILLAGE",
+    "ISLAND",
+    "LAKE",
+    "RIVER",
+    "PARK",
+    "MALL",
+    "AIRPORT",
+    "HOSPITAL",
+    "SCHOOL",
+    "LIBRARY",
+  ],
+  Animal: [
+    "DOG",
+    "CAT",
     "ELEPHANT",
-    "COOKIE",
-  ];
-  return words[Math.floor(Math.random() * words.length)];
+    "LION",
+    "TIGER",
+    "BEAR",
+    "WOLF",
+    "EAGLE",
+    "SHARK",
+    "DOLPHIN",
+    "PENGUIN",
+    "MONKEY",
+    "GIRAFFE",
+    "ZEBRA",
+    "RABBIT",
+  ],
+  Thing: [
+    "CAR",
+    "PHONE",
+    "LAPTOP",
+    "WATCH",
+    "CHAIR",
+    "TABLE",
+    "LAMP",
+    "MIRROR",
+    "BOOK",
+    "PENCIL",
+    "CAMERA",
+    "GUITAR",
+    "BALL",
+    "CLOCK",
+    "UMBRELLA",
+  ],
+} as const;
+
+type Category = keyof typeof WORD_CATEGORIES;
+
+// Helper function to get a random word with category
+function getRandomWordWithCategory(): { word: string; category: Category } {
+  const categories = Object.keys(WORD_CATEGORIES) as Category[];
+  const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+  const wordsInCategory = WORD_CATEGORIES[randomCategory];
+  const randomWord = wordsInCategory[Math.floor(Math.random() * wordsInCategory.length)];
+  
+  return {
+    word: randomWord,
+    category: randomCategory,
+  };
 }
 
 // Create a new game
@@ -63,11 +123,13 @@ export const createGame = mutation({
     }
 
     // Create the game
+    const { word, category } = getRandomWordWithCategory();
     const gameId = await ctx.db.insert("games", {
       code,
       hostId: args.hostId,
       status: "waiting",
-      word: getRandomWord(),
+      word,
+      category,
       createdAt: Date.now(),
     });
 
@@ -325,10 +387,12 @@ export const restartGame = mutation({
       });
     }
 
-    // Reset game state with new word
+    // Reset game state with new word and category
+    const { word, category } = getRandomWordWithCategory();
     await ctx.db.patch(game._id, {
       status: "waiting",
-      word: getRandomWord(), // New word for new round
+      word,
+      category,
       imposterId: undefined, // Clear imposter
     });
 
@@ -379,12 +443,20 @@ export const getPlayerWord = query({
       return null;
     }
 
-    // Check if this player is the imposter
+    // Return category for everyone, word only for non-imposters
     if (game.imposterId === args.playerId) {
-      return "IMPOSTER";
+      return {
+        category: game.category,
+        word: null,
+        isImposter: true,
+      };
     }
 
-    return game.word;
+    return {
+      category: game.category,
+      word: game.word,
+      isImposter: false,
+    };
   },
 });
 

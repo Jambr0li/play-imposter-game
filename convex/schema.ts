@@ -12,6 +12,7 @@ export default defineSchema({
       v.literal("finished")
     ),
     word: v.string(),
+    category: v.string(),
     imposterId: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_code", ["code"]),

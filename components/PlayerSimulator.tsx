@@ -92,7 +92,7 @@ export default function PlayerSimulator({
 
   // Playing phase
   if (game.status === "playing" && playerWord) {
-    const isImposter = playerWord === "IMPOSTER";
+    const { category, word, isImposter } = playerWord;
 
     return (
       <Card
@@ -108,13 +108,15 @@ export default function PlayerSimulator({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center">
-            <p className="text-xs text-muted-foreground mb-2">Your word:</p>
+            <p className="text-xs text-muted-foreground mb-1">Category:</p>
+            <p className="text-sm font-bold mb-2">{category}</p>
+            <p className="text-xs text-muted-foreground mb-1">Your word:</p>
             <div
               className={`text-3xl font-bold ${
                 isImposter ? "text-destructive" : ""
               }`}
             >
-              {playerWord}
+              {isImposter ? "???" : word}
             </div>
             {isImposter && (
               <p className="text-xs text-destructive mt-2">🤫 You're the imposter!</p>

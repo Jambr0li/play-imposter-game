@@ -224,24 +224,63 @@ const WORD_CATEGORIES = {
 type Category = keyof typeof WORD_CATEGORIES;
 
 // Helper function to get a random word with category
-function getRandomWordWithCategory(preferredCategory?: string): { word: string; category: Category } {
+function getRandomWordWithCategory(
+  preferredCategory?: string,
+  usedWords: string[] = []
+): { word: string; category: Category; updatedUsedWords: string[] } {
   const categories = Object.keys(WORD_CATEGORIES) as Category[];
   
-  // If a specific category is preferred and valid, use it
-  let selectedCategory: Category;
-  if (preferredCategory && preferredCategory !== "Random" && categories.includes(preferredCategory as Category)) {
-    selectedCategory = preferredCategory as Category;
-  } else {
-    // Otherwise pick randomly
-    selectedCategory = categories[Math.floor(Math.random() * categories.length)];
+  // Collect all words from all categories
+  const allWords: string[] = [];
+  for (const category of categories) {
+    allWords.push(...WORD_CATEGORIES[category]);
   }
   
-  const wordsInCategory = WORD_CATEGORIES[selectedCategory];
-  const randomWord = wordsInCategory[Math.floor(Math.random() * wordsInCategory.length)];
+  // Filter out used words
+  let availableWords = allWords.filter(word => !usedWords.includes(word));
+  
+  // If all words have been used, reset the list
+  if (availableWords.length === 0) {
+    availableWords = [...allWords];
+    usedWords = [];
+  }
+  
+  // If a specific category is preferred and valid, filter to that category
+  let selectedWord: string;
+  let selectedCategory: Category;
+  
+  if (preferredCategory && preferredCategory !== "Random" && categories.includes(preferredCategory as Category)) {
+    selectedCategory = preferredCategory as Category;
+    const categoryWords = WORD_CATEGORIES[selectedCategory];
+    const availableCategoryWords = categoryWords.filter(word => availableWords.includes(word));
+    
+    // If all words in this category are used, use any available word from this category
+    if (availableCategoryWords.length === 0) {
+      selectedWord = categoryWords[Math.floor(Math.random() * categoryWords.length)];
+    } else {
+      selectedWord = availableCategoryWords[Math.floor(Math.random() * availableCategoryWords.length)];
+    }
+  } else {
+    // Pick randomly from available words
+    selectedWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+    
+    // Determine which category this word belongs to
+    for (const cat of categories) {
+      const categoryWordList = WORD_CATEGORIES[cat] as readonly string[];
+      if (categoryWordList.includes(selectedWord)) {
+        selectedCategory = cat;
+        break;
+      }
+    }
+  }
+  
+  // Add selected word to used words
+  const updatedUsedWords = [...usedWords, selectedWord];
   
   return {
-    word: randomWord,
-    category: selectedCategory,
+    word: selectedWord,
+    category: selectedCategory!,
+    updatedUsedWords,
   };
 }
 
@@ -277,6 +316,7 @@ export const createGame = mutation({
       word,
       category,
       categoryPreference: "Random", // Default to random
+      usedWords: [],
       createdAt: Date.now(),
     });
 
@@ -391,7 +431,10 @@ export const setReady = mutation({
 
       if (game && game.status === "waiting") {
         // Generate word based on category preference
-        const { word, category } = getRandomWordWithCategory(game.categoryPreference);
+        const { word, category, updatedUsedWords } = getRandomWordWithCategory(
+          game.categoryPreference,
+          game.usedWords || []
+        );
         
         // Pick a random imposter
         const randomIndex = Math.floor(Math.random() * allPlayers.length);
@@ -401,6 +444,7 @@ export const setReady = mutation({
           status: "playing",
           word,
           category,
+          usedWords: updatedUsedWords,
           imposterId: imposter.playerId,
         });
       }
@@ -444,7 +488,10 @@ export const startGame = mutation({
     }
 
     // Generate word based on category preference
-    const { word, category } = getRandomWordWithCategory(game.categoryPreference);
+    const { word, category, updatedUsedWords } = getRandomWordWithCategory(
+      game.categoryPreference,
+      game.usedWords || []
+    );
     
     // Pick a random imposter
     const randomIndex = Math.floor(Math.random() * players.length);
@@ -454,6 +501,7 @@ export const startGame = mutation({
       status: "playing",
       word,
       category,
+      usedWords: updatedUsedWords,
       imposterId: imposter.playerId,
     });
 
@@ -582,12 +630,9 @@ export const restartGame = mutation({
       });
     }
 
-    // Reset game state with new word and category
-    const { word, category } = getRandomWordWithCategory(game.categoryPreference);
+    // Reset game state (word will be selected when game starts)
     await ctx.db.patch(game._id, {
       status: "waiting",
-      word,
-      category,
       imposterId: undefined, // Clear imposter
     });
 

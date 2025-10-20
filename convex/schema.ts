@@ -14,6 +14,7 @@ export default defineSchema({
     word: v.string(),
     category: v.string(),
     categoryPreference: v.optional(v.string()), // "Random", "Food", "Location", "Animal", "Object"
+    usedWords: v.optional(v.array(v.string())),
     imposterId: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_code", ["code"]),

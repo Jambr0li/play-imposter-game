@@ -30,5 +30,13 @@ export default defineSchema({
   })
     .index("by_game", ["gameCode"])
     .index("by_player", ["playerId"]),
+
+  messages: defineTable({
+    gameCode: v.string(),
+    playerId: v.string(),
+    playerName: v.string(),
+    message: v.string(),
+    timestamp: v.number(),
+  }).index("by_game", ["gameCode"]),
 });
 

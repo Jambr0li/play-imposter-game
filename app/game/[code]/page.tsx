@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChatBox } from "@/components/ChatBox";
 
 export default function GameRoom() {
   const params = useParams();
@@ -391,8 +392,9 @@ export default function GameRoom() {
   // Waiting phase
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="max-w-2xl w-full space-y-6">
-        <Card className="shadow-lg">
+      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-3xl text-center">
               Waiting Room
@@ -597,6 +599,18 @@ export default function GameRoom() {
             </Dialog>
           </CardFooter>
         </Card>
+        </div>
+
+        {/* Chat Box */}
+        <div className="lg:col-span-1 h-[600px]">
+          {currentPlayer && (
+            <ChatBox
+              gameCode={code}
+              playerId={playerId}
+              playerName={currentPlayer.playerName}
+            />
+          )}
+        </div>
       </div>
     </main>
   );

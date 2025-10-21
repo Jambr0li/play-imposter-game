@@ -787,3 +787,66 @@ export const getPlayerWord = query({
   },
 });
 
+// Send a chat message
+export const sendMessage = mutation({
+  args: {
+    gameCode: v.string(),
+    playerId: v.string(),
+    playerName: v.string(),
+    message: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const gameCode = args.gameCode.toUpperCase();
+
+    // Verify game exists
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", gameCode))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    // Verify player is in the game
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", gameCode))
+      .filter((q) => q.eq(q.field("playerId"), args.playerId))
+      .first();
+
+    if (!player) {
+      throw new Error("Player not in game");
+    }
+
+    // Trim message and check it's not empty
+    const trimmedMessage = args.message.trim();
+    if (!trimmedMessage) {
+      return { success: false };
+    }
+
+    // Insert message
+    await ctx.db.insert("messages", {
+      gameCode,
+      playerId: args.playerId,
+      playerName: args.playerName,
+      message: trimmedMessage,
+      timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+// Get all messages for a game
+export const getMessages = query({
+  args: { code: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("messages")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.code.toUpperCase()))
+      .order("asc")
+      .collect();
+  },
+});
+

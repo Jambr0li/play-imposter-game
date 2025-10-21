@@ -68,10 +68,22 @@ export default function JoinPage() {
       }
     } catch (error: any) {
       console.error("Error joining game:", error);
-      setError(
-        error.message ||
-          "Failed to join game. Please check the code and try again."
-      );
+      
+      // Extract user-friendly error message from Convex error
+      let errorMessage = "Failed to join game. Please check the code and try again.";
+      
+      if (error?.message) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes("game not found") || msg.includes("not found")) {
+          errorMessage = "Game not found";
+        } else if (msg.includes("already started")) {
+          errorMessage = "Game has already started";
+        } else if (msg.includes("full")) {
+          errorMessage = "Game is full (max 10 players)";
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 

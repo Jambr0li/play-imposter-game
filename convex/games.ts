@@ -355,7 +355,7 @@ export const joinGame = mutation({
       throw new Error("Game not found");
     }
 
-    if (game.status !== "waiting") {
+    if (game.status !== "waiting" && game.status !== "lobby") {
       throw new Error("Game has already started");
     }
 
@@ -456,6 +456,42 @@ export const setReady = mutation({
           usedWords: updatedUsedWords,
           imposterIds,
         });
+      } else if (game && game.status === "lobby") {
+        // Auto-start online game
+        const { word, category, updatedUsedWords } = getRandomWordWithCategory(
+          game.categoryPreference,
+          game.usedWords || []
+        );
+
+        // Determine number of imposters
+        const desiredCount = game.imposterCount || 1;
+        const maxCount = getMaxImposterCount(allPlayers.length);
+        const imposterCount = Math.min(desiredCount, maxCount);
+
+        // Pick random imposters and create turn order
+        const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
+        const imposters = shuffled.slice(0, imposterCount);
+        const imposterIds = imposters.map((p) => p.playerId);
+        const turnOrder = shuffled.map((p) => p.playerId);
+        const firstPlayer = turnOrder[0];
+
+        await ctx.db.patch(game._id, {
+          status: "round-1",
+          word,
+          category,
+          usedWords: updatedUsedWords,
+          imposterIds,
+          currentRound: 1,
+          turnOrder,
+          currentTurnPlayerId: firstPlayer,
+        });
+
+        // Reset player submission states
+        for (const p of allPlayers) {
+          await ctx.db.patch(p._id, {
+            hasSubmittedWord: false,
+          });
+        }
       }
     }
 

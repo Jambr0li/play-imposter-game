@@ -18,6 +18,7 @@ export default defineSchema({
     imposterIds: v.optional(v.array(v.string())),
     imposterCount: v.optional(v.number()), // Preferred number of imposters
     createdAt: v.number(),
+    lastActivityAt: v.number(), // Track last activity for automatic cleanup
   }).index("by_code", ["code"]),
 
   players: defineTable({

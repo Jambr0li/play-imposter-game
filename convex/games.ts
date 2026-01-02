@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 // Helper function to generate a unique 6-digit code
 function generateGameCode(): string {
@@ -310,6 +310,7 @@ export const createGame = mutation({
 
     // Create the game
     const { word, category } = getRandomWordWithCategory();
+    const now = Date.now();
     const gameId = await ctx.db.insert("games", {
       code,
       hostId: args.hostId,
@@ -319,7 +320,8 @@ export const createGame = mutation({
       categoryPreference: "Random", // Default to random
       imposterCount: 1, // Default to 1 imposter
       usedWords: [],
-      createdAt: Date.now(),
+      createdAt: now,
+      lastActivityAt: now,
     });
 
     // Add host as first player
@@ -389,6 +391,11 @@ export const joinGame = mutation({
       joinedAt: Date.now(),
     });
 
+    // Update game activity
+    await ctx.db.patch(game._id, {
+      lastActivityAt: Date.now(),
+    });
+
     return { success: true, code: game.code };
   },
 });
@@ -415,6 +422,18 @@ export const setReady = mutation({
       isReady: args.isReady,
     });
 
+    // Update game activity
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode))
+      .first();
+
+    if (game) {
+      await ctx.db.patch(game._id, {
+        lastActivityAt: Date.now(),
+      });
+    }
+
     // Check if all players are ready
     const allPlayers = await ctx.db
       .query("players")
@@ -426,23 +445,18 @@ export const setReady = mutation({
 
     if (allReady && minPlayers) {
       // Start the game automatically
-      const game = await ctx.db
-        .query("games")
-        .withIndex("by_code", (q) => q.eq("code", args.gameCode))
-        .first();
-
       if (game && game.status === "waiting") {
         // Generate word based on category preference
         const { word, category, updatedUsedWords } = getRandomWordWithCategory(
           game.categoryPreference,
           game.usedWords || []
         );
-        
+
         // Determine number of imposters
         const desiredCount = game.imposterCount || 1;
         const maxCount = getMaxImposterCount(allPlayers.length);
         const imposterCount = Math.min(desiredCount, maxCount);
-        
+
         // Pick random imposters
         const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
         const imposters = shuffled.slice(0, imposterCount);
@@ -454,6 +468,7 @@ export const setReady = mutation({
           category,
           usedWords: updatedUsedWords,
           imposterIds,
+          lastActivityAt: Date.now(),
         });
       }
     }
@@ -517,6 +532,7 @@ export const startGame = mutation({
       category,
       usedWords: updatedUsedWords,
       imposterIds,
+      lastActivityAt: Date.now(),
     });
 
     return { success: true };
@@ -560,6 +576,7 @@ export const leaveGame = mutation({
         const newHost = remainingPlayers[0];
         await ctx.db.patch(game._id, {
           hostId: newHost.playerId,
+          lastActivityAt: Date.now(),
         });
         await ctx.db.patch(newHost._id, {
           isHost: true,
@@ -612,6 +629,11 @@ export const kickPlayer = mutation({
 
     await ctx.db.delete(targetPlayer._id);
 
+    // Update game activity
+    await ctx.db.patch(game._id, {
+      lastActivityAt: Date.now(),
+    });
+
     return { success: true };
   },
 });
@@ -648,6 +670,7 @@ export const setCategoryPreference = mutation({
 
     await ctx.db.patch(game._id, {
       categoryPreference: args.categoryPreference,
+      lastActivityAt: Date.now(),
     });
 
     return { success: true };
@@ -697,6 +720,7 @@ export const setImposterCount = mutation({
 
     await ctx.db.patch(game._id, {
       imposterCount: args.imposterCount,
+      lastActivityAt: Date.now(),
     });
 
     return { success: true };
@@ -742,6 +766,7 @@ export const restartGame = mutation({
     await ctx.db.patch(game._id, {
       status: "waiting",
       imposterIds: undefined,
+      lastActivityAt: Date.now(),
     });
 
     return { success: true };
@@ -828,6 +853,48 @@ export const getPlayerWord = query({
       category: game.category,
       word: game.word,
       isImposter: false,
+    };
+  },
+});
+
+// Clean up inactive games (internal mutation for cron job)
+export const cleanupInactiveGames = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const INACTIVITY_THRESHOLD = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const cutoffTime = Date.now() - INACTIVITY_THRESHOLD;
+
+    // Find all inactive games
+    const allGames = await ctx.db.query("games").collect();
+    const inactiveGames = allGames.filter(
+      (game) => game.lastActivityAt < cutoffTime
+    );
+
+    let deletedGamesCount = 0;
+    let deletedPlayersCount = 0;
+
+    // Delete each inactive game and its players
+    for (const game of inactiveGames) {
+      // Delete all players in this game
+      const players = await ctx.db
+        .query("players")
+        .withIndex("by_game", (q) => q.eq("gameCode", game.code))
+        .collect();
+
+      for (const player of players) {
+        await ctx.db.delete(player._id);
+        deletedPlayersCount++;
+      }
+
+      // Delete the game
+      await ctx.db.delete(game._id);
+      deletedGamesCount++;
+    }
+
+    return {
+      deletedGames: deletedGamesCount,
+      deletedPlayers: deletedPlayersCount,
+      timestamp: Date.now(),
     };
   },
 });

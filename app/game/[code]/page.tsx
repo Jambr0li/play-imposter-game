@@ -34,6 +34,7 @@ import {
   LogOut,
   AlertCircle,
   RotateCcw,
+  UserX,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
@@ -53,6 +54,8 @@ export default function GameRoom() {
   const [mounted, setMounted] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [showKickDialog, setShowKickDialog] = useState(false);
+  const [playerToKick, setPlayerToKick] = useState<{ id: string; name: string } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
   const game = useQuery(api.games.getGame, code ? { code } : "skip");
@@ -71,6 +74,7 @@ export default function GameRoom() {
   const restartGame = useMutation(api.games.restartGame);
   const setCategoryPreference = useMutation(api.games.setCategoryPreference);
   const setImposterCount = useMutation(api.games.setImposterCount);
+  const kickPlayer = useMutation(api.games.kickPlayer);
 
   useEffect(() => {
     const id = localStorage.getItem("playerId");
@@ -92,6 +96,18 @@ export default function GameRoom() {
   }, [playerId, code, leaveGame]);
 
   const currentPlayer = players?.find((p) => p.playerId === playerId);
+
+  // Detect if player was kicked (not in players list but game still exists)
+  useEffect(() => {
+    if (!mounted || !playerId || !game || !players) return;
+
+    // If game exists and players loaded, but current player is not in the list
+    if (game && players && !currentPlayer && !isLeaving) {
+      // Player was kicked or removed
+      setIsLeaving(true);
+      router.push("/");
+    }
+  }, [mounted, playerId, game, players, currentPlayer, isLeaving, router]);
   const readyCount = players?.filter((p) => p.isReady).length || 0;
   const totalPlayers = players?.length || 0;
   const allReady = readyCount === totalPlayers && totalPlayers >= 3;
@@ -162,6 +178,23 @@ export default function GameRoom() {
     } catch (error: any) {
       console.error("Error setting imposter count:", error);
       alert(error.message || "Failed to set imposter count");
+    }
+  };
+
+  const handleKickPlayer = async () => {
+    if (!code || !playerId || !playerToKick) return;
+
+    try {
+      await kickPlayer({
+        gameCode: code,
+        hostId: playerId,
+        targetPlayerId: playerToKick.id,
+      });
+      setShowKickDialog(false);
+      setPlayerToKick(null);
+    } catch (error: any) {
+      console.error("Error kicking player:", error);
+      alert(error.message || "Failed to kick player");
     }
   };
 
@@ -518,12 +551,27 @@ export default function GameRoom() {
                         </Badge>
                       )}
                     </div>
-                    {player.isReady && (
-                      <Badge>
-                        <Check className="size-3 mr-1" />
-                        Ready
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {player.isReady && (
+                        <Badge>
+                          <Check className="size-3 mr-1" />
+                          Ready
+                        </Badge>
+                      )}
+                      {currentPlayer?.isHost && !player.isHost && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setPlayerToKick({ id: player.playerId, name: player.playerName });
+                            setShowKickDialog(true);
+                          }}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <UserX className="size-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -597,6 +645,32 @@ export default function GameRoom() {
             </Dialog>
           </CardFooter>
         </Card>
+
+        {/* Kick Player Confirmation Dialog */}
+        <Dialog open={showKickDialog} onOpenChange={setShowKickDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Kick Player?</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to kick <strong>{playerToKick?.name}</strong> from the game?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowKickDialog(false);
+                  setPlayerToKick(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleKickPlayer} variant="destructive">
+                Kick Player
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   );

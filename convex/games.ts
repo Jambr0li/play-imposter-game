@@ -571,6 +571,51 @@ export const leaveGame = mutation({
   },
 });
 
+// Kick a player from the game (host only)
+export const kickPlayer = mutation({
+  args: {
+    gameCode: v.string(),
+    hostId: v.string(),
+    targetPlayerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode.toUpperCase()))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    if (game.hostId !== args.hostId) {
+      throw new Error("Only the host can kick players");
+    }
+
+    if (game.status !== "waiting") {
+      throw new Error("Can only kick players in the lobby");
+    }
+
+    if (args.targetPlayerId === args.hostId) {
+      throw new Error("Host cannot kick themselves");
+    }
+
+    const targetPlayer = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .filter((q) => q.eq(q.field("playerId"), args.targetPlayerId))
+      .first();
+
+    if (!targetPlayer) {
+      throw new Error("Player not found");
+    }
+
+    await ctx.db.delete(targetPlayer._id);
+
+    return { success: true };
+  },
+});
+
 // Set category preference (host only)
 export const setCategoryPreference = mutation({
   args: {

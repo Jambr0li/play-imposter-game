@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Users, HelpCircle } from "lucide-react";
 
 export default function Home() {
   return (
@@ -42,6 +42,18 @@ export default function Home() {
             <Users className="size-4" />
             <span>3-10 players</span>
           </div>
+
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Link href="/how-to-play">
+              <HelpCircle className="mr-2 size-4" />
+              How to Play
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     </main>

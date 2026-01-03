@@ -41,6 +41,9 @@ importers:
       next:
         specifier: 16.1.1
         version: 16.1.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      qrcode.react:
+        specifier: ^4.2.0
+        version: 4.2.0(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -1119,6 +1122,11 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
+  qrcode.react@4.2.0:
+    resolution: {integrity: sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   react-dom@19.1.0:
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
     peerDependencies:
@@ -2128,6 +2136,10 @@ snapshots:
       source-map-js: 1.2.1
 
   prettier@3.6.2: {}
+
+  qrcode.react@4.2.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
 
   react-dom@19.1.0(react@19.1.0):
     dependencies:

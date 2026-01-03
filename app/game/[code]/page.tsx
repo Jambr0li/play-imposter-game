@@ -35,7 +35,9 @@ import {
   AlertCircle,
   RotateCcw,
   UserX,
+  QrCode,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -55,6 +57,7 @@ export default function GameRoom() {
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showKickDialog, setShowKickDialog] = useState(false);
+  const [showQRDialog, setShowQRDialog] = useState(false);
   const [playerToKick, setPlayerToKick] = useState<{ id: string; name: string } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -111,6 +114,11 @@ export default function GameRoom() {
   const readyCount = players?.filter((p) => p.isReady).length || 0;
   const totalPlayers = players?.length || 0;
   const allReady = readyCount === totalPlayers && totalPlayers >= 3;
+  
+  // Generate join URL for QR code
+  const joinUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/join?code=${code}`
+    : '';
 
   const handleToggleReady = async () => {
     if (!currentPlayer || !code) return;
@@ -447,6 +455,40 @@ export default function GameRoom() {
                 </p>
               </CardContent>
             </Card>
+
+            {/* QR Code Button */}
+            <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="lg" className="w-full">
+                  <QrCode className="mr-2" />
+                  Show QR Code
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Scan to Join</DialogTitle>
+                  <DialogDescription>
+                    Scan this QR code with your phone camera to join the game
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-center p-6 bg-white rounded-lg">
+                  <QRCodeSVG 
+                    value={joinUrl}
+                    size={256}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Or share the code manually:
+                  </p>
+                  <p className="text-2xl font-bold font-mono tracking-widest">
+                    {code}
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Development Test Mode Link */}
             {process.env.NODE_ENV === "development" && (

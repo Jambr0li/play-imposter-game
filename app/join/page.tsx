@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +17,11 @@ import {
 } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
-export default function JoinPage() {
+function JoinGameForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const codeFromUrl = searchParams.get("code");
+  
   const [playerId, setPlayerId] = useState<string>("");
   const [playerName, setPlayerName] = useState<string>("");
   const [gameCode, setGameCode] = useState<string>("");
@@ -40,7 +43,12 @@ export default function JoinPage() {
     if (storedName) {
       setPlayerName(storedName);
     }
-  }, []);
+
+    // Pre-fill game code from URL parameter
+    if (codeFromUrl) {
+      setGameCode(codeFromUrl.toUpperCase());
+    }
+  }, [codeFromUrl]);
 
   const handleJoinGame = async () => {
     if (!playerName.trim()) {
@@ -154,6 +162,25 @@ export default function JoinPage() {
         </CardFooter>
       </Card>
     </main>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex flex-col items-center justify-center p-4">
+        <Card className="max-w-md w-full shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Join a Game</CardTitle>
+            <CardDescription className="text-center">
+              Loading...
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </main>
+    }>
+      <JoinGameForm />
+    </Suspense>
   );
 }
 

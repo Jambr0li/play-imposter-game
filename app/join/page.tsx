@@ -101,7 +101,9 @@ function JoinGameForm() {
         <CardHeader>
           <CardTitle className="text-2xl text-center">Join a Game</CardTitle>
           <CardDescription className="text-center">
-            Enter the game code to join your friends
+            {codeFromUrl
+              ? "Enter your name to join the game"
+              : "Enter the game code to join your friends"}
           </CardDescription>
         </CardHeader>
 
@@ -118,7 +120,8 @@ function JoinGameForm() {
               placeholder="ABCD12"
               className="text-lg font-mono text-center uppercase tracking-wider"
               maxLength={6}
-              autoFocus
+              autoFocus={!codeFromUrl}
+              disabled={!!codeFromUrl}
             />
           </div>
 
@@ -132,6 +135,7 @@ function JoinGameForm() {
               onKeyDown={(e) => e.key === "Enter" && handleJoinGame()}
               placeholder="Enter your name"
               className="text-base"
+              autoFocus={!!codeFromUrl}
             />
           </div>
 

@@ -109,6 +109,20 @@
         "Verify the Join game button is red"
       ],
       "passes": true
+    },
+    {"category": "ui",
+      "description": "Make Join game button blue on the Join Game screen",
+      "steps": [
+        "Verify the Join game button is red"
+      ],
+      "passes": true
+    },
+    {"category": "ui",
+      "description": "Make Back button green on the Join Game screen",
+      "steps": [
+        "Verify the Join game button is red"
+      ],
+      "passes": false
     }
   ]
 }

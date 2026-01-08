@@ -245,3 +245,43 @@
 
 **Commit**: 22cfe01 - Add Done button for host to reset game from results to lobby
 
+---
+
+## 2026-01-08 - Feature: Make Join game button red
+
+**Feature**: Make Join game button red
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Updated Join Game button in app/join/page.tsx (line 154)
+- Added Tailwind CSS classes: bg-red-600 hover:bg-red-700
+- Button now displays with red background and darker red on hover
+
+**Testing**:
+- ✅ Build compiles successfully with no errors
+- ✅ Join game button has red background color (bg-red-600)
+- ✅ Button hover state shows darker red (bg-red-700)
+
+**Commit**: 09e366d - Make Join game button red
+
+---
+
+## 2026-01-08 - Feature: Make Join game button blue
+
+**Feature**: Make Join game button blue on the Join Game screen
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Updated Join Game button in app/join/page.tsx (line 154)
+- Changed Tailwind CSS classes from bg-red-600 hover:bg-red-700 to bg-blue-600 hover:bg-blue-700
+- Button now displays with blue background and darker blue on hover
+
+**Testing**:
+- ✅ Build compiles successfully with no errors
+- ✅ Join game button has blue background color (bg-blue-600)
+- ✅ Button hover state shows darker blue (bg-blue-700)
+
+**Commit**: f8424d8 - Make Join game button blue
+

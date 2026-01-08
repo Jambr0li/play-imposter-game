@@ -1,0 +1,23 @@
+
+## 2026-01-08 - Feature: Game phase field implementation
+
+**Feature**: Game has a phase field that tracks current state: lobby, voting, or results
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Added optional `phase` field to game schema in convex/schema.ts (union type: "lobby" | "voting" | "results")
+- Updated createGame mutation to initialize new games with phase="lobby"
+- Created new updateGamePhase mutation to allow transitioning between phases
+- Modified restartGame mutation to reset phase back to "lobby"
+- Added phase display to the game UI in both waiting room and playing views
+
+**Testing**:
+- ✅ New games start with phase set to 'lobby'
+- ✅ Phase can be updated via mutation to 'voting' and 'results'
+- ✅ Phase persists correctly in the database after updates
+- ✅ UI displays the current phase to users
+
+**Commit**: fc94046 - Add game phase field to track voting and results states
+
+**Next feature**: Host sees a 'VOTE NOW' button that transitions the game to voting phase

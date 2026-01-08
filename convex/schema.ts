@@ -11,6 +11,11 @@ export default defineSchema({
       v.literal("playing"),
       v.literal("finished")
     ),
+    phase: v.optional(v.union(
+      v.literal("lobby"),
+      v.literal("voting"),
+      v.literal("results")
+    )),
     word: v.string(),
     category: v.string(),
     categoryPreference: v.optional(v.string()), // "Random", "Food", "Location", "Animal", "Object"

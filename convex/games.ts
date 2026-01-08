@@ -315,6 +315,7 @@ export const createGame = mutation({
       code,
       hostId: args.hostId,
       status: "waiting",
+      phase: "lobby",
       word,
       category,
       categoryPreference: "Random", // Default to random
@@ -727,6 +728,31 @@ export const setImposterCount = mutation({
   },
 });
 
+// Update game phase
+export const updateGamePhase = mutation({
+  args: {
+    gameCode: v.string(),
+    phase: v.union(v.literal("lobby"), v.literal("voting"), v.literal("results")),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode.toUpperCase()))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    await ctx.db.patch(game._id, {
+      phase: args.phase,
+      lastActivityAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
 // Restart the game (host only)
 export const restartGame = mutation({
   args: {
@@ -765,6 +791,7 @@ export const restartGame = mutation({
     // Reset game state (word will be selected when game starts)
     await ctx.db.patch(game._id, {
       status: "waiting",
+      phase: "lobby",
       imposterIds: undefined,
       lastActivityAt: Date.now(),
     });

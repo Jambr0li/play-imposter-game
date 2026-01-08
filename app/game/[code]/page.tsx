@@ -305,6 +305,11 @@ export default function GameRoom() {
             <CardHeader className="text-center space-y-2">
               <CardDescription className="text-sm">Category:</CardDescription>
               <CardTitle className="text-3xl">{category}</CardTitle>
+              {game.phase && (
+                <p className="text-xs text-muted-foreground">
+                  Phase: {game.phase}
+                </p>
+              )}
             </CardHeader>
             
             <CardContent className="text-center py-8">
@@ -453,6 +458,11 @@ export default function GameRoom() {
                 <p className="text-sm text-muted-foreground mt-3">
                   Share this code with your friends!
                 </p>
+                {game.phase && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Phase: {game.phase}
+                  </p>
+                )}
               </CardContent>
             </Card>
 

@@ -1,0 +1,107 @@
+{
+  "project": "Play Imposter Game",
+  "description": "A multiplayer imposter-style game built with Next.js and Convex",
+  "instructions": {
+    "for_agent": "Only modify the 'passes' field of features. Do not remove, edit descriptions, or reorder features. Mark a feature as passes:true only after thorough end-to-end testing.",
+    "priority": "Work on features in order from top to bottom. Complete one feature at a time.",
+    "testing": "Verify each feature works as a user would experience it before marking as passing."
+  },
+  "features": [
+    {
+      "category": "functional",
+      "description": "Waiting lobby has a shared counter with an emoji button that all players can click to increment",
+      "steps": [
+        "Navigate to a game lobby as a player",
+        "Verify there is a button with an emoji (e.g. 🎉 or 👆) and a number displayed next to it",
+        "Click the button and verify the number increments",
+        "Open the same lobby in another browser/tab as a different player",
+        "Click the button from the second player and verify both players see the count update in real-time",
+        "Refresh the page and verify the counter persists with the correct value"
+      ],
+      "passes": true
+    },
+    {
+      "category": "data",
+      "description": "Game has a phase field that tracks current state: lobby, voting, or results",
+      "steps": [
+        "Check the Convex schema has a phase field on the game document",
+        "Verify new games start with phase set to 'lobby'",
+        "Confirm the phase field can be updated via a mutation",
+        "Verify the game page UI can read and display the current phase"
+      ],
+      "passes": true
+    },
+    {
+      "category": "functional",
+      "description": "Host sees a 'VOTE NOW' button that transitions the game to voting phase",
+      "steps": [
+        "Join a game as the host",
+        "Verify a 'VOTE NOW' button is visible only to the host",
+        "Click the button and verify the game phase changes to 'voting'",
+        "Join the same game as a non-host player and verify they do NOT see the 'VOTE NOW' button",
+        "Verify all players see the UI update when voting phase begins"
+      ],
+      "passes": false
+    },
+    {
+      "category": "ui",
+      "description": "During voting phase, all players see a list of all players they can vote for",
+      "steps": [
+        "Trigger voting phase as host",
+        "Verify all players (including host) see a voting interface",
+        "Verify the voting interface shows a list of all player names",
+        "Verify each player name has a way to select/vote for them (button or radio)",
+        "Verify players can see their own name in the list"
+      ],
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Players can submit a vote for who they think is the imposter",
+      "steps": [
+        "During voting phase, select a player from the list",
+        "Click to submit the vote",
+        "Verify the vote is recorded in the database",
+        "Verify the UI shows confirmation that the vote was cast",
+        "Verify a player cannot change their vote after submitting"
+      ],
+      "passes": false
+    },
+    {
+      "category": "ui",
+      "description": "Voting phase shows which players have voted (but not who they voted for)",
+      "steps": [
+        "During voting phase with multiple players",
+        "Have one player submit their vote",
+        "Verify all players can see an indicator showing that player has voted",
+        "Verify the actual vote choice is NOT revealed to other players",
+        "Have remaining players vote and verify indicators update in real-time"
+      ],
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "After all players vote, game transitions to results phase and reveals the outcome",
+      "steps": [
+        "Have all players in the game submit their votes",
+        "Verify the game automatically transitions to 'results' phase",
+        "Verify the results show who received the most votes",
+        "Verify the results reveal whether that player was the imposter or not",
+        "Verify all players see the same results simultaneously"
+      ],
+      "passes": false
+    },
+    {
+      "category": "functional",
+      "description": "Host sees a 'Done' button in results phase that resets the game to lobby",
+      "steps": [
+        "In results phase, verify the host sees a 'Done' button",
+        "Verify non-host players do NOT see the 'Done' button",
+        "Click 'Done' as host and verify the game phase resets to 'lobby'",
+        "Verify all votes are cleared for the new round",
+        "Verify all players are returned to the lobby view"
+      ],
+      "passes": false
+    }
+  ]
+}

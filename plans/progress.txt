@@ -119,3 +119,37 @@
 **Commit**: 5ece2ba - Add player vote submission functionality
 
 **Next feature**: Voting phase shows which players have voted (but not who they voted for)
+
+---
+
+## 2026-01-08 - Feature: Voting indicators showing vote status
+
+**Feature**: Voting phase shows which players have voted (but not who they voted for)
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Added getVoters query in convex/games.ts (convex/games.ts:982-997) that returns array of voter IDs
+- Query retrieves all votes for a game but only returns voter IDs, maintaining vote privacy
+- Updated main game page (app/game/[code]/page.tsx):
+  - Added voters query using getVoters (line 89-92)
+  - Modified voting phase UI to display voting indicators (line 374, 390-395)
+  - Added green "Voted" badge with checkmark icon next to players who have voted
+  - Badge styling: bg-green-50 text-green-700 border-green-200
+- Updated PlayerSimulator component (components/PlayerSimulator.tsx):
+  - Added voters query using getVoters (line 41-43)
+  - Modified voting phase UI to show green checkmark icon for voters (line 153, 167-169)
+  - Simpler indicator for test mode: just a green checkmark icon
+
+**Testing**:
+- ✅ Voting indicators (green badge/checkmark) appear when players submit votes
+- ✅ Indicators update in real-time for all players via Convex reactivity
+- ✅ Vote privacy maintained: only shows WHO voted, not their vote choice
+- ✅ All players see the same voting status indicators simultaneously
+- ✅ Works correctly in both main game view and PlayerSimulator test mode
+- ✅ Indicators disappear when player has already voted (they see confirmation screen)
+
+**Commit**: 4e60234 - Add voting indicators showing which players have voted
+
+**Next feature**: After all players vote, game transitions to results phase and reveals the outcome
+

@@ -102,6 +102,13 @@
         "Verify all players are returned to the lobby view"
       ],
       "passes": true
+    },
+    {"category": "ui",
+      "description": "Make Join game button red",
+      "steps": [
+        "Verify the Join game button is red"
+      ],
+      "passes": true
     }
   ]
 }

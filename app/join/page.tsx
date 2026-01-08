@@ -151,7 +151,7 @@ function JoinGameForm() {
           <Button
             onClick={handleJoinGame}
             size="lg"
-            className="w-full"
+            className="w-full bg-red-600 hover:bg-red-700"
           >
             Join Game
           </Button>

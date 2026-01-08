@@ -41,7 +41,7 @@
         "Join the same game as a non-host player and verify they do NOT see the 'VOTE NOW' button",
         "Verify all players see the UI update when voting phase begins"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "ui",
@@ -53,7 +53,7 @@
         "Verify each player name has a way to select/vote for them (button or radio)",
         "Verify players can see their own name in the list"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",

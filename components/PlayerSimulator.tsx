@@ -94,6 +94,47 @@ export default function PlayerSimulator({
   if (game.status === "playing" && playerWord) {
     const { category, word, isImposter } = playerWord;
 
+    // Voting phase - show voting interface
+    if (game.phase === "voting") {
+      return (
+        <Card className={colorClass}>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span>{playerName}</span>
+              {currentPlayer?.isHost && <Crown className="size-4" />}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center">
+              <p className="text-xs font-bold mb-2">🗳️ Voting Phase</p>
+              <p className="text-xs text-muted-foreground">
+                Vote for the imposter
+              </p>
+            </div>
+
+            <div className="text-xs">
+              <p className="font-semibold mb-2">Select a player:</p>
+              <div className="space-y-1">
+                {players?.map((p) => (
+                  <Button
+                    key={p._id}
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-xs h-auto py-2"
+                  >
+                    <span className={p.playerId === playerId ? "font-bold" : ""}>
+                      {p.playerName}
+                      {p.playerId === playerId && " (You)"}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
       <Card
         className={`${colorClass} ${

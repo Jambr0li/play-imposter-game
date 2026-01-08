@@ -309,6 +309,84 @@ export default function GameRoom() {
     const imposterIds = game.imposterIds || [];
     const imposterCount = imposterIds.length;
 
+    // Voting phase - show voting interface
+    if (game.phase === "voting") {
+      return (
+        <main className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="max-w-2xl w-full space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader className="text-center space-y-2">
+                <CardTitle className="text-3xl">Voting Phase</CardTitle>
+                <CardDescription>
+                  Vote for who you think is the imposter
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg mb-3">Select a player:</h3>
+                  {players?.map((player) => (
+                    <Button
+                      key={player._id}
+                      variant="outline"
+                      className="w-full justify-start text-left h-auto py-4 px-6"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-medium text-base">
+                          {player.playerName}
+                          {player.playerId === playerId && (
+                            <span className="text-muted-foreground"> (You)</span>
+                          )}
+                        </span>
+                        {player.isHost && (
+                          <Badge variant="secondary" className="ml-2">
+                            <Crown className="size-3 mr-1" />
+                            Host
+                          </Badge>
+                        )}
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <LogOut className="mr-2" />
+                  Leave Game
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Leave Game?</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to leave the game?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowLeaveDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleLeaveGame} variant="destructive">
+                    Leave Game
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
         <div className="max-w-2xl w-full space-y-6">
@@ -326,7 +404,7 @@ export default function GameRoom() {
                 </p>
               )}
             </CardHeader>
-            
+
             <CardContent className="text-center py-8">
               {isImposter ? (
                 <div className="space-y-4">
@@ -343,7 +421,7 @@ export default function GameRoom() {
                 </div>
               )}
             </CardContent>
-            
+
             <CardFooter className="justify-center pt-2">
               <p className="text-center text-muted-foreground">
                 {isImposter

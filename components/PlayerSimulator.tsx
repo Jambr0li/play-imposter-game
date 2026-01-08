@@ -32,6 +32,7 @@ export default function PlayerSimulator({
   const joinGame = useMutation(api.games.joinGame);
   const setReady = useMutation(api.games.setReady);
   const submitVote = useMutation(api.games.submitVote);
+  const resetToLobby = useMutation(api.games.resetToLobby);
 
   const playerVote = useQuery(api.games.getPlayerVote, {
     gameCode,
@@ -90,6 +91,17 @@ export default function PlayerSimulator({
       });
     } catch (error: any) {
       console.error("Error submitting vote:", error);
+    }
+  };
+
+  const handleDone = async () => {
+    try {
+      await resetToLobby({
+        gameCode,
+        hostId: playerId,
+      });
+    } catch (error: any) {
+      console.error("Error resetting to lobby:", error);
     }
   };
 
@@ -261,6 +273,17 @@ export default function PlayerSimulator({
                 }
               </div>
             </div>
+
+            {/* Done button for host only */}
+            {currentPlayer?.isHost && (
+              <Button
+                onClick={handleDone}
+                size="sm"
+                className="w-full mt-2"
+              >
+                Done
+              </Button>
+            )}
           </CardContent>
         </Card>
       );

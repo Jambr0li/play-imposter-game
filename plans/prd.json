@@ -101,7 +101,7 @@
         "Verify all votes are cleared for the new round",
         "Verify all players are returned to the lobby view"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

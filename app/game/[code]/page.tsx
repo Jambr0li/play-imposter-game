@@ -80,6 +80,7 @@ export default function GameRoom() {
   const kickPlayer = useMutation(api.games.kickPlayer);
   const updateGamePhase = useMutation(api.games.updateGamePhase);
   const submitVote = useMutation(api.games.submitVote);
+  const resetToLobby = useMutation(api.games.resetToLobby);
 
   const playerVote = useQuery(
     api.games.getPlayerVote,
@@ -249,6 +250,20 @@ export default function GameRoom() {
     } catch (error: any) {
       console.error("Error submitting vote:", error);
       alert(error.message || "Failed to submit vote");
+    }
+  };
+
+  const handleDone = async () => {
+    if (!code || !playerId) return;
+
+    try {
+      await resetToLobby({
+        gameCode: code,
+        hostId: playerId,
+      });
+    } catch (error: any) {
+      console.error("Error resetting to lobby:", error);
+      alert(error.message || "Failed to reset game");
     }
   };
 
@@ -548,6 +563,17 @@ export default function GameRoom() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Done button for host only */}
+            {game.hostId === playerId && (
+              <Button
+                onClick={handleDone}
+                size="lg"
+                className="w-full"
+              >
+                Done
+              </Button>
+            )}
 
             <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
               <DialogTrigger asChild>

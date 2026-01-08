@@ -1104,6 +1104,68 @@ export const getVotingResults = query({
   },
 });
 
+// Reset game to lobby from results phase (host only)
+export const resetToLobby = mutation({
+  args: {
+    gameCode: v.string(),
+    hostId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Find the game
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode.toUpperCase()))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    // Verify caller is the host
+    if (game.hostId !== args.hostId) {
+      throw new Error("Only the host can reset the game");
+    }
+
+    // Verify game is in results phase
+    if (game.phase !== "results") {
+      throw new Error("Game must be in results phase to reset to lobby");
+    }
+
+    // Get all players
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .collect();
+
+    // Reset all players to not ready
+    for (const player of players) {
+      await ctx.db.patch(player._id, {
+        isReady: false,
+      });
+    }
+
+    // Clear all votes for this game
+    const votes = await ctx.db
+      .query("votes")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .collect();
+
+    for (const vote of votes) {
+      await ctx.db.delete(vote._id);
+    }
+
+    // Reset game state to waiting lobby
+    await ctx.db.patch(game._id, {
+      status: "waiting",
+      phase: "lobby",
+      imposterIds: undefined,
+      lastActivityAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
 // Clean up inactive games (internal mutation for cron job)
 export const cleanupInactiveGames = internalMutation({
   args: {},

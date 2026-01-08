@@ -158,8 +158,7 @@ function JoinGameForm() {
 
           <Button
             onClick={() => router.push("/")}
-            variant="ghost"
-            className="w-full"
+            className="w-full bg-green-600 hover:bg-green-700"
           >
             Back
           </Button>

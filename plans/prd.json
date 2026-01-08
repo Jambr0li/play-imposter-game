@@ -122,7 +122,7 @@
       "steps": [
         "Verify the Join game button is red"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

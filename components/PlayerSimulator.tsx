@@ -31,6 +31,12 @@ export default function PlayerSimulator({
 
   const joinGame = useMutation(api.games.joinGame);
   const setReady = useMutation(api.games.setReady);
+  const submitVote = useMutation(api.games.submitVote);
+
+  const playerVote = useQuery(api.games.getPlayerVote, {
+    gameCode,
+    playerId,
+  });
 
   // Auto-join on mount
   useEffect(() => {
@@ -66,6 +72,18 @@ export default function PlayerSimulator({
     }
   };
 
+  const handleSubmitVote = async (votedForId: string) => {
+    try {
+      await submitVote({
+        gameCode,
+        voterId: playerId,
+        votedForId,
+      });
+    } catch (error: any) {
+      console.error("Error submitting vote:", error);
+    }
+  };
+
   if (!game) {
     return (
       <Card className={colorClass}>
@@ -96,6 +114,8 @@ export default function PlayerSimulator({
 
     // Voting phase - show voting interface
     if (game.phase === "voting") {
+      const hasVoted = playerVote !== undefined && playerVote !== null;
+
       return (
         <Card className={colorClass}>
           <CardHeader>
@@ -108,28 +128,40 @@ export default function PlayerSimulator({
             <div className="text-center">
               <p className="text-xs font-bold mb-2">🗳️ Voting Phase</p>
               <p className="text-xs text-muted-foreground">
-                Vote for the imposter
+                {hasVoted ? "Vote submitted!" : "Vote for the imposter"}
               </p>
             </div>
 
-            <div className="text-xs">
-              <p className="font-semibold mb-2">Select a player:</p>
-              <div className="space-y-1">
-                {players?.map((p) => (
-                  <Button
-                    key={p._id}
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start text-xs h-auto py-2"
-                  >
-                    <span className={p.playerId === playerId ? "font-bold" : ""}>
-                      {p.playerName}
-                      {p.playerId === playerId && " (You)"}
-                    </span>
-                  </Button>
-                ))}
+            {hasVoted ? (
+              <div className="text-center py-4">
+                <div className="flex justify-center mb-2">
+                  <div className="rounded-full bg-green-100 p-2">
+                    <Check className="size-6 text-green-600" />
+                  </div>
+                </div>
+                <p className="text-xs font-semibold">Waiting for others...</p>
               </div>
-            </div>
+            ) : (
+              <div className="text-xs">
+                <p className="font-semibold mb-2">Select a player:</p>
+                <div className="space-y-1">
+                  {players?.map((p) => (
+                    <Button
+                      key={p._id}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start text-xs h-auto py-2"
+                      onClick={() => handleSubmitVote(p.playerId)}
+                    >
+                      <span className={p.playerId === playerId ? "font-bold" : ""}>
+                        {p.playerName}
+                        {p.playerId === playerId && " (You)"}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       );

@@ -886,6 +886,98 @@ export const getPlayerWord = query({
   },
 });
 
+// Submit a vote for a player (during voting phase)
+export const submitVote = mutation({
+  args: {
+    gameCode: v.string(),
+    voterId: v.string(),
+    votedForId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode.toUpperCase()))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    if (game.status !== "playing") {
+      throw new Error("Game is not in playing state");
+    }
+
+    if (game.phase !== "voting") {
+      throw new Error("Game is not in voting phase");
+    }
+
+    // Verify the voter is in the game
+    const voter = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .filter((q) => q.eq(q.field("playerId"), args.voterId))
+      .first();
+
+    if (!voter) {
+      throw new Error("Voter not found in game");
+    }
+
+    // Verify the voted-for player is in the game
+    const votedFor = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .filter((q) => q.eq(q.field("playerId"), args.votedForId))
+      .first();
+
+    if (!votedFor) {
+      throw new Error("Player to vote for not found in game");
+    }
+
+    // Check if player has already voted
+    const existingVote = await ctx.db
+      .query("votes")
+      .withIndex("by_voter", (q) =>
+        q.eq("gameCode", args.gameCode.toUpperCase()).eq("voterId", args.voterId)
+      )
+      .first();
+
+    if (existingVote) {
+      throw new Error("You have already voted and cannot change your vote");
+    }
+
+    // Submit the vote
+    await ctx.db.insert("votes", {
+      gameCode: args.gameCode.toUpperCase(),
+      voterId: args.voterId,
+      votedForId: args.votedForId,
+      submittedAt: Date.now(),
+    });
+
+    // Update game activity
+    await ctx.db.patch(game._id, {
+      lastActivityAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+// Get a player's vote (if they have voted)
+export const getPlayerVote = query({
+  args: {
+    gameCode: v.string(),
+    playerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("votes")
+      .withIndex("by_voter", (q) =>
+        q.eq("gameCode", args.gameCode.toUpperCase()).eq("voterId", args.playerId)
+      )
+      .first();
+  },
+});
+
 // Clean up inactive games (internal mutation for cron job)
 export const cleanupInactiveGames = internalMutation({
   args: {},

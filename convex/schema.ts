@@ -36,5 +36,14 @@ export default defineSchema({
   })
     .index("by_game", ["gameCode"])
     .index("by_player", ["playerId"]),
+
+  votes: defineTable({
+    gameCode: v.string(),
+    voterId: v.string(), // Player who is voting
+    votedForId: v.string(), // Player they voted for
+    submittedAt: v.number(),
+  })
+    .index("by_game", ["gameCode"])
+    .index("by_voter", ["gameCode", "voterId"]),
 });
 

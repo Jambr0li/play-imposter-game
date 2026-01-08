@@ -79,6 +79,12 @@ export default function GameRoom() {
   const setImposterCount = useMutation(api.games.setImposterCount);
   const kickPlayer = useMutation(api.games.kickPlayer);
   const updateGamePhase = useMutation(api.games.updateGamePhase);
+  const submitVote = useMutation(api.games.submitVote);
+
+  const playerVote = useQuery(
+    api.games.getPlayerVote,
+    code && playerId ? { gameCode: code, playerId } : "skip"
+  );
 
   useEffect(() => {
     const id = localStorage.getItem("playerId");
@@ -221,6 +227,21 @@ export default function GameRoom() {
     }
   };
 
+  const handleSubmitVote = async (votedForId: string) => {
+    if (!code || !playerId) return;
+
+    try {
+      await submitVote({
+        gameCode: code,
+        voterId: playerId,
+        votedForId,
+      });
+    } catch (error: any) {
+      console.error("Error submitting vote:", error);
+      alert(error.message || "Failed to submit vote");
+    }
+  };
+
   if (!mounted || game === undefined || isLeaving) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -311,6 +332,8 @@ export default function GameRoom() {
 
     // Voting phase - show voting interface
     if (game.phase === "voting") {
+      const hasVoted = playerVote !== undefined && playerVote !== null;
+
       return (
         <main className="min-h-screen flex flex-col items-center justify-center p-4">
           <div className="max-w-2xl w-full space-y-6">
@@ -318,36 +341,55 @@ export default function GameRoom() {
               <CardHeader className="text-center space-y-2">
                 <CardTitle className="text-3xl">Voting Phase</CardTitle>
                 <CardDescription>
-                  Vote for who you think is the imposter
+                  {hasVoted
+                    ? "Your vote has been submitted!"
+                    : "Vote for who you think is the imposter"}
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg mb-3">Select a player:</h3>
-                  {players?.map((player) => (
-                    <Button
-                      key={player._id}
-                      variant="outline"
-                      className="w-full justify-start text-left h-auto py-4 px-6"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-medium text-base">
-                          {player.playerName}
-                          {player.playerId === playerId && (
-                            <span className="text-muted-foreground"> (You)</span>
-                          )}
-                        </span>
-                        {player.isHost && (
-                          <Badge variant="secondary" className="ml-2">
-                            <Crown className="size-3 mr-1" />
-                            Host
-                          </Badge>
-                        )}
+                {hasVoted ? (
+                  <div className="text-center py-8 space-y-4">
+                    <div className="flex justify-center">
+                      <div className="rounded-full bg-green-100 p-4">
+                        <Check className="size-12 text-green-600" />
                       </div>
-                    </Button>
-                  ))}
-                </div>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-lg">Vote Submitted</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Waiting for other players to vote...
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg mb-3">Select a player:</h3>
+                    {players?.map((player) => (
+                      <Button
+                        key={player._id}
+                        variant="outline"
+                        className="w-full justify-start text-left h-auto py-4 px-6 hover:bg-primary hover:text-primary-foreground"
+                        onClick={() => handleSubmitVote(player.playerId)}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-medium text-base">
+                            {player.playerName}
+                            {player.playerId === playerId && (
+                              <span className="text-muted-foreground"> (You)</span>
+                            )}
+                          </span>
+                          {player.isHost && (
+                            <Badge variant="secondary" className="ml-2">
+                              <Crown className="size-3 mr-1" />
+                              Host
+                            </Badge>
+                          )}
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

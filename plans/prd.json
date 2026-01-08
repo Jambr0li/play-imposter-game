@@ -65,7 +65,7 @@
         "Verify the UI shows confirmation that the vote was cast",
         "Verify a player cannot change their vote after submitting"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "ui",

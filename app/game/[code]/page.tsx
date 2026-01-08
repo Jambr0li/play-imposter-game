@@ -86,6 +86,11 @@ export default function GameRoom() {
     code && playerId ? { gameCode: code, playerId } : "skip"
   );
 
+  const voters = useQuery(
+    api.games.getVoters,
+    code ? { gameCode: code } : "skip"
+  );
+
   useEffect(() => {
     const id = localStorage.getItem("playerId");
     if (!id) {
@@ -365,29 +370,40 @@ export default function GameRoom() {
                 ) : (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg mb-3">Select a player:</h3>
-                    {players?.map((player) => (
-                      <Button
-                        key={player._id}
-                        variant="outline"
-                        className="w-full justify-start text-left h-auto py-4 px-6 hover:bg-primary hover:text-primary-foreground"
-                        onClick={() => handleSubmitVote(player.playerId)}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span className="font-medium text-base">
-                            {player.playerName}
-                            {player.playerId === playerId && (
-                              <span className="text-muted-foreground"> (You)</span>
+                    {players?.map((player) => {
+                      const hasPlayerVoted = voters?.includes(player.playerId);
+                      return (
+                        <Button
+                          key={player._id}
+                          variant="outline"
+                          className="w-full justify-start text-left h-auto py-4 px-6 hover:bg-primary hover:text-primary-foreground"
+                          onClick={() => handleSubmitVote(player.playerId)}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-base">
+                                {player.playerName}
+                                {player.playerId === playerId && (
+                                  <span className="text-muted-foreground"> (You)</span>
+                                )}
+                              </span>
+                              {hasPlayerVoted && (
+                                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                                  <Check className="size-3 mr-1" />
+                                  Voted
+                                </Badge>
+                              )}
+                            </div>
+                            {player.isHost && (
+                              <Badge variant="secondary" className="ml-2">
+                                <Crown className="size-3 mr-1" />
+                                Host
+                              </Badge>
                             )}
-                          </span>
-                          {player.isHost && (
-                            <Badge variant="secondary" className="ml-2">
-                              <Crown className="size-3 mr-1" />
-                              Host
-                            </Badge>
-                          )}
-                        </div>
-                      </Button>
-                    ))}
+                          </div>
+                        </Button>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

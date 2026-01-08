@@ -978,6 +978,24 @@ export const getPlayerVote = query({
   },
 });
 
+// Get list of player IDs who have voted (but not who they voted for)
+export const getVoters = query({
+  args: {
+    gameCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const votes = await ctx.db
+      .query("votes")
+      .withIndex("by_game", (q) =>
+        q.eq("gameCode", args.gameCode.toUpperCase())
+      )
+      .collect();
+
+    // Return only the voter IDs, not who they voted for
+    return votes.map(vote => vote.voterId);
+  },
+});
+
 // Clean up inactive games (internal mutation for cron job)
 export const cleanupInactiveGames = internalMutation({
   args: {},

@@ -38,6 +38,10 @@ export default function PlayerSimulator({
     playerId,
   });
 
+  const voters = useQuery(api.games.getVoters, {
+    gameCode,
+  });
+
   // Auto-join on mount
   useEffect(() => {
     if (!gameCode || !game) return;
@@ -145,20 +149,28 @@ export default function PlayerSimulator({
               <div className="text-xs">
                 <p className="font-semibold mb-2">Select a player:</p>
                 <div className="space-y-1">
-                  {players?.map((p) => (
-                    <Button
-                      key={p._id}
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start text-xs h-auto py-2"
-                      onClick={() => handleSubmitVote(p.playerId)}
-                    >
-                      <span className={p.playerId === playerId ? "font-bold" : ""}>
-                        {p.playerName}
-                        {p.playerId === playerId && " (You)"}
-                      </span>
-                    </Button>
-                  ))}
+                  {players?.map((p) => {
+                    const hasPlayerVoted = voters?.includes(p.playerId);
+                    return (
+                      <Button
+                        key={p._id}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start text-xs h-auto py-2"
+                        onClick={() => handleSubmitVote(p.playerId)}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className={p.playerId === playerId ? "font-bold" : ""}>
+                            {p.playerName}
+                            {p.playerId === playerId && " (You)"}
+                          </span>
+                          {hasPlayerVoted && (
+                            <Check className="size-3 text-green-600 ml-1" />
+                          )}
+                        </div>
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
             )}

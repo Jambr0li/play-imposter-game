@@ -77,7 +77,7 @@
         "Verify the actual vote choice is NOT revealed to other players",
         "Have remaining players vote and verify indicators update in real-time"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",

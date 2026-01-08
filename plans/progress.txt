@@ -153,3 +153,95 @@
 
 **Next feature**: After all players vote, game transitions to results phase and reveals the outcome
 
+---
+
+## 2026-01-08 - Feature: Automatic results phase after all votes submitted
+
+**Feature**: After all players vote, game transitions to results phase and reveals the outcome
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Modified submitVote mutation in convex/games.ts (lines 961-977):
+  - Added logic to check if all players have voted after each vote submission
+  - Automatically transitions game phase to "results" when vote count equals player count
+  - Query all players and votes, compare lengths to determine completion
+- Added getVotingResults query in convex/games.ts (lines 1017-1105):
+  - Calculates vote tally for each player who received votes
+  - Determines winner by finding player(s) with most votes
+  - Implements tie-breaking: alphabetical sort by player name
+  - Checks if voted-out player was an imposter
+  - Returns comprehensive results: votedOutPlayerId, votedOutPlayerName, votedOutWasImposter, maxVotes, isTie, voteDetails array, imposterIds, totalVotes, totalPlayers
+- Added results phase UI to main game page (app/game/[code]/page.tsx:94-96, 453-585):
+  - Added votingResults query that fetches data when phase is "results"
+  - Created results phase section showing:
+    - "Results" card with vote tally for all players
+    - Vote counts displayed with badges (e.g., "2 votes")
+    - Most voted player prominently displayed
+    - Tie indicator if applicable ("Tie resolved alphabetically")
+    - Success/failure panel: green background with "✓ SUCCESS!" if imposter caught, red background with "✗ FAILED!" otherwise
+    - Reveal section showing all imposters with red badges
+- Added results phase support to PlayerSimulator component (components/PlayerSimulator.tsx:45-48, 187-267):
+  - Added votingResults query for test mode
+  - Created compact results display showing vote tallies, success/failure status, and imposter reveals
+  - Maintains consistent visual design with main game UI
+
+**Testing**:
+- ✅ All players can submit votes during voting phase
+- ✅ Game automatically transitions to "results" phase when last player votes
+- ✅ No manual action required - transition happens immediately via mutation
+- ✅ Results screen shows complete vote tally with counts for each player
+- ✅ Results correctly identify player with most votes (alphabetical tie-breaking works)
+- ✅ Results reveal whether voted-out player was the imposter
+- ✅ Success screen (green) displays when imposter caught
+- ✅ Failure screen (red) displays when non-imposter voted out
+- ✅ All imposters are revealed at the end
+- ✅ All players see results simultaneously via Convex reactivity
+- ✅ Works correctly in both main game view and PlayerSimulator test mode
+
+**Commit**: 4d886e0 - Add automatic results phase after voting completes
+
+**Next feature**: Host sees a 'Done' button in results phase that resets the game to lobby
+
+---
+
+## 2026-01-08 - Feature: Done button to reset game from results to lobby
+
+**Feature**: Host sees a 'Done' button in results phase that resets the game to lobby
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Added resetToLobby mutation in convex/games.ts (lines 1107-1167):
+  - Validates caller is the host
+  - Verifies game is in results phase before allowing reset
+  - Resets all players to isReady: false
+  - Clears all votes from the votes table for the game
+  - Resets game status to "waiting" and phase to "lobby"
+  - Clears imposterIds to prepare for next round
+- Added Done button in main game page (app/game/[code]/page.tsx):
+  - Imported resetToLobby mutation (line 83)
+  - Created handleDone handler function (lines 256-268)
+  - Added Done button in results phase UI (lines 567-576)
+  - Button is only visible when game.hostId === playerId (host check)
+  - Button is full width with large size, positioned before Leave Game button
+- Added Done button support in PlayerSimulator component (components/PlayerSimulator.tsx):
+  - Imported resetToLobby mutation (line 35)
+  - Created handleDone handler function (lines 97-106)
+  - Added Done button in results phase UI (lines 277-286)
+  - Button visible only to host players in test mode
+- Updated prd.json to mark feature as passes: true
+
+**Testing**:
+- ✅ Host sees "Done" button in results phase
+- ✅ Non-host players do NOT see the "Done" button
+- ✅ Clicking "Done" as host resets game phase to "lobby"
+- ✅ Clicking "Done" resets game status to "waiting"
+- ✅ All votes are cleared from database when Done is clicked
+- ✅ All players are reset to not ready (isReady: false)
+- ✅ All players see the lobby view after reset via Convex reactivity
+- ✅ imposterIds are cleared to prepare for next round
+- ✅ Works correctly in both main game view and PlayerSimulator test mode
+
+**Commit**: 22cfe01 - Add Done button for host to reset game from results to lobby
+

@@ -465,6 +465,7 @@ export const setReady = mutation({
 
         await ctx.db.patch(game._id, {
           status: "playing",
+          phase: "lobby",
           word,
           category,
           usedWords: updatedUsedWords,
@@ -529,6 +530,7 @@ export const startGame = mutation({
 
     await ctx.db.patch(game._id, {
       status: "playing",
+      phase: "lobby",
       word,
       category,
       usedWords: updatedUsedWords,

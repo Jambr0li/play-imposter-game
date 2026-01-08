@@ -78,6 +78,7 @@ export default function GameRoom() {
   const setCategoryPreference = useMutation(api.games.setCategoryPreference);
   const setImposterCount = useMutation(api.games.setImposterCount);
   const kickPlayer = useMutation(api.games.kickPlayer);
+  const updateGamePhase = useMutation(api.games.updateGamePhase);
 
   useEffect(() => {
     const id = localStorage.getItem("playerId");
@@ -203,6 +204,20 @@ export default function GameRoom() {
     } catch (error: any) {
       console.error("Error kicking player:", error);
       alert(error.message || "Failed to kick player");
+    }
+  };
+
+  const handleVoteNow = async () => {
+    if (!code) return;
+
+    try {
+      await updateGamePhase({
+        gameCode: code,
+        phase: "voting",
+      });
+    } catch (error: any) {
+      console.error("Error starting voting phase:", error);
+      alert(error.message || "Failed to start voting");
     }
   };
 
@@ -369,6 +384,17 @@ export default function GameRoom() {
               ))}
             </CardContent>
           </Card>
+
+          {/* Show VOTE NOW button only to host when game is playing but not yet in voting/results phase */}
+          {currentPlayer?.isHost && (!game.phase || game.phase === "lobby") && (
+            <Button
+              onClick={handleVoteNow}
+              size="lg"
+              className="w-full"
+            >
+              VOTE NOW
+            </Button>
+          )}
 
           {/* Show restart button only to host */}
           {currentPlayer?.isHost && (

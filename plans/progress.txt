@@ -20,4 +20,58 @@
 
 **Commit**: fc94046 - Add game phase field to track voting and results states
 
-**Next feature**: Host sees a 'VOTE NOW' button that transitions the game to voting phase
+---
+
+## 2026-01-08 - Feature: VOTE NOW button for host
+
+**Feature**: Host sees a 'VOTE NOW' button that transitions the game to voting phase
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Added VOTE NOW button in playing phase UI (app/game/[code]/page.tsx:388-397)
+- Button is only visible to the host when game phase is "lobby" or undefined
+- Imported and wired up updateGamePhase mutation
+- Created handleVoteNow handler function that transitions phase to "voting"
+- Fixed startGame mutations to initialize phase="lobby" when game begins (convex/games.ts:468, 533)
+- Button positioned between Players list and Start New Round button
+
+**Testing**:
+- ✅ Host sees VOTE NOW button during playing phase (when game.status === "playing" && phase === "lobby")
+- ✅ Non-host players do NOT see the VOTE NOW button
+- ✅ Clicking button successfully transitions game phase to "voting"
+- ✅ Phase indicator updates to show "Phase: voting" after clicking
+- ✅ All players see the phase change in real-time via Convex reactivity
+- ✅ Button disappears after phase transitions to voting
+
+**Commit**: 799e23e - Add VOTE NOW button for host to transition game to voting phase
+
+---
+
+## 2026-01-08 - Feature: Voting phase player list UI
+
+**Feature**: During voting phase, all players see a list of all players they can vote for
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Added voting phase UI in main game page (app/game/[code]/page.tsx:312-388)
+- Created conditional rendering when game.phase === "voting" within the playing phase
+- Displayed "Voting Phase" card with title and description
+- Rendered complete list of all players with individual vote buttons
+- Each player button shows player name with "(You)" indicator for current player
+- Host badge displayed for host player in voting list
+- Added voting phase view to PlayerSimulator component (components/PlayerSimulator.tsx:97-136)
+- Test mode now properly displays voting interface for all simulated players
+
+**Testing**:
+- ✅ All players (including host) see the voting interface when phase is "voting"
+- ✅ Voting interface shows a list of all player names
+- ✅ Each player name has a button to select/vote for them
+- ✅ Players can see their own name in the list with "(You)" indicator
+- ✅ Host badge displays correctly in the voting list
+- ✅ UI updates in real-time for all players via Convex reactivity
+
+**Commit**: e2a2924 - Add voting phase UI showing list of all players
+
+**Next feature**: Players can submit a vote for who they think is the imposter

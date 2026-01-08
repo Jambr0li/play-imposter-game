@@ -958,6 +958,24 @@ export const submitVote = mutation({
       lastActivityAt: Date.now(),
     });
 
+    // Check if all players have now voted
+    const allPlayers = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .collect();
+
+    const allVotes = await ctx.db
+      .query("votes")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .collect();
+
+    // If everyone has voted, automatically transition to results phase
+    if (allVotes.length === allPlayers.length) {
+      await ctx.db.patch(game._id, {
+        phase: "results",
+      });
+    }
+
     return { success: true };
   },
 });
@@ -993,6 +1011,96 @@ export const getVoters = query({
 
     // Return only the voter IDs, not who they voted for
     return votes.map(vote => vote.voterId);
+  },
+});
+
+// Get voting results - shows vote tallies and determines winner
+export const getVotingResults = query({
+  args: {
+    gameCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", args.gameCode.toUpperCase()))
+      .first();
+
+    if (!game) {
+      throw new Error("Game not found");
+    }
+
+    // Get all votes
+    const votes = await ctx.db
+      .query("votes")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .collect();
+
+    // Get all players to build player name lookup
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
+      .collect();
+
+    // Create a map of playerId to player info
+    const playerMap = new Map(
+      players.map(p => [p.playerId, { name: p.playerName, id: p.playerId }])
+    );
+
+    // Count votes for each player
+    const voteTally: Record<string, number> = {};
+    votes.forEach(vote => {
+      voteTally[vote.votedForId] = (voteTally[vote.votedForId] || 0) + 1;
+    });
+
+    // Find player(s) with most votes
+    let maxVotes = 0;
+    let playersWithMostVotes: string[] = [];
+
+    Object.entries(voteTally).forEach(([playerId, voteCount]) => {
+      if (voteCount > maxVotes) {
+        maxVotes = voteCount;
+        playersWithMostVotes = [playerId];
+      } else if (voteCount === maxVotes) {
+        playersWithMostVotes.push(playerId);
+      }
+    });
+
+    // Determine the winner (if there's a tie, pick the first one alphabetically by name)
+    let votedOutPlayerId: string | null = null;
+    if (playersWithMostVotes.length === 1) {
+      votedOutPlayerId = playersWithMostVotes[0];
+    } else if (playersWithMostVotes.length > 1) {
+      // Tie-breaker: alphabetical by name
+      playersWithMostVotes.sort((a, b) => {
+        const nameA = playerMap.get(a)?.name || "";
+        const nameB = playerMap.get(b)?.name || "";
+        return nameA.localeCompare(nameB);
+      });
+      votedOutPlayerId = playersWithMostVotes[0];
+    }
+
+    // Check if voted out player was an imposter
+    const imposterIds = game.imposterIds || [];
+    const votedOutWasImposter = votedOutPlayerId ? imposterIds.includes(votedOutPlayerId) : false;
+
+    // Build results object with vote details
+    const voteDetails = Object.entries(voteTally).map(([playerId, voteCount]) => ({
+      playerId,
+      playerName: playerMap.get(playerId)?.name || "Unknown",
+      voteCount,
+    })).sort((a, b) => b.voteCount - a.voteCount); // Sort by vote count descending
+
+    return {
+      votedOutPlayerId,
+      votedOutPlayerName: votedOutPlayerId ? playerMap.get(votedOutPlayerId)?.name || "Unknown" : null,
+      votedOutWasImposter,
+      maxVotes,
+      isTie: playersWithMostVotes.length > 1,
+      voteDetails,
+      imposterIds,
+      totalVotes: votes.length,
+      totalPlayers: players.length,
+    };
   },
 });
 

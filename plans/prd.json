@@ -89,7 +89,7 @@
         "Verify the results reveal whether that player was the imposter or not",
         "Verify all players see the same results simultaneously"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",

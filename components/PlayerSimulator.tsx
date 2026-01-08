@@ -42,6 +42,11 @@ export default function PlayerSimulator({
     gameCode,
   });
 
+  const votingResults = useQuery(
+    api.games.getVotingResults,
+    game?.phase === "results" ? { gameCode } : "skip"
+  );
+
   // Auto-join on mount
   useEffect(() => {
     if (!gameCode || !game) return;
@@ -174,6 +179,88 @@ export default function PlayerSimulator({
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Results phase - show voting results
+    if (game.phase === "results" && votingResults) {
+      const {
+        votedOutPlayerName,
+        votedOutWasImposter,
+        voteDetails,
+        imposterIds,
+        isTie,
+      } = votingResults;
+
+      return (
+        <Card className={colorClass}>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span>{playerName}</span>
+              {currentPlayer?.isHost && <Crown className="size-4" />}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-center">
+              <p className="text-xs font-bold mb-1">📊 Results</p>
+            </div>
+
+            {/* Vote Tally */}
+            <div className="text-xs">
+              <p className="font-semibold mb-1">Votes:</p>
+              <div className="space-y-1">
+                {voteDetails.map((detail) => (
+                  <div
+                    key={detail.playerId}
+                    className="flex items-center justify-between bg-muted/50 rounded px-2 py-1"
+                  >
+                    <span className="text-xs">{detail.playerName}</span>
+                    <Badge variant="secondary" className="text-xs h-5">
+                      {detail.voteCount}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Voted Out Result */}
+            <div className={`p-2 rounded text-center ${
+              votedOutWasImposter
+                ? 'bg-green-50 border border-green-200'
+                : 'bg-red-50 border border-red-200'
+            }`}>
+              <p className="text-xs font-bold mb-1">
+                {votedOutWasImposter ? '✓ SUCCESS' : '✗ FAILED'}
+              </p>
+              <p className={`text-xs ${
+                votedOutWasImposter ? 'text-green-700' : 'text-red-700'
+              }`}>
+                {votedOutPlayerName} was {votedOutWasImposter ? '' : 'NOT '}the imposter
+              </p>
+            </div>
+
+            {/* Show imposters */}
+            <div className="text-xs text-center">
+              <p className="text-muted-foreground mb-1">
+                {imposterIds.length === 1 ? 'Imposter:' : 'Imposters:'}
+              </p>
+              <div className="flex flex-wrap justify-center gap-1">
+                {players
+                  ?.filter(p => imposterIds.includes(p.playerId))
+                  .map(p => (
+                    <Badge
+                      key={p.playerId}
+                      variant="destructive"
+                      className="text-xs h-5"
+                    >
+                      {p.playerName}
+                    </Badge>
+                  ))
+                }
+              </div>
+            </div>
           </CardContent>
         </Card>
       );

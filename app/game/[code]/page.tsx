@@ -91,6 +91,11 @@ export default function GameRoom() {
     code ? { gameCode: code } : "skip"
   );
 
+  const votingResults = useQuery(
+    api.games.getVotingResults,
+    code && game?.phase === "results" ? { gameCode: code } : "skip"
+  );
+
   useEffect(() => {
     const id = localStorage.getItem("playerId");
     if (!id) {
@@ -406,6 +411,141 @@ export default function GameRoom() {
                     })}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <LogOut className="mr-2" />
+                  Leave Game
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Leave Game?</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to leave the game?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowLeaveDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleLeaveGame} variant="destructive">
+                    Leave Game
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </main>
+      );
+    }
+
+    // Results phase - show voting results
+    if (game.phase === "results" && votingResults) {
+      const {
+        votedOutPlayerName,
+        votedOutWasImposter,
+        voteDetails,
+        imposterIds,
+        isTie,
+      } = votingResults;
+
+      return (
+        <main className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="max-w-2xl w-full space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader className="text-center space-y-2">
+                <CardTitle className="text-3xl">Results</CardTitle>
+                <CardDescription>
+                  The votes have been counted!
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                {/* Vote Tally */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">Vote Tally:</h3>
+                  {voteDetails.map((detail) => (
+                    <div
+                      key={detail.playerId}
+                      className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-3"
+                    >
+                      <span className="font-medium">{detail.playerName}</span>
+                      <Badge variant="secondary">
+                        {detail.voteCount} {detail.voteCount === 1 ? 'vote' : 'votes'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                {/* Voted Out Player */}
+                <div className="text-center space-y-4">
+                  {isTie && (
+                    <p className="text-sm text-muted-foreground">
+                      (Tie resolved alphabetically)
+                    </p>
+                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Most Voted:
+                    </p>
+                    <p className="text-2xl font-bold">{votedOutPlayerName}</p>
+                  </div>
+
+                  {/* Reveal if they were imposter */}
+                  <div className={`p-6 rounded-lg ${
+                    votedOutWasImposter
+                      ? 'bg-green-50 border-2 border-green-200'
+                      : 'bg-red-50 border-2 border-red-200'
+                  }`}>
+                    <div className="text-4xl font-bold mb-2">
+                      {votedOutWasImposter ? '✓ SUCCESS!' : '✗ FAILED!'}
+                    </div>
+                    <p className={`text-lg ${
+                      votedOutWasImposter ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {votedOutWasImposter
+                        ? `${votedOutPlayerName} was the imposter!`
+                        : `${votedOutPlayerName} was NOT the imposter!`
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Reveal all imposters */}
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    {imposterIds.length === 1 ? 'The Imposter was:' : 'The Imposters were:'}
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {players
+                      ?.filter(p => imposterIds.includes(p.playerId))
+                      .map(p => (
+                        <Badge
+                          key={p.playerId}
+                          variant="destructive"
+                          className="text-base px-3 py-1"
+                        >
+                          {p.playerName}
+                        </Badge>
+                      ))
+                    }
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

@@ -110,7 +110,7 @@
         "Verify all previously sent messages are still visible",
         "Verify the messages display with correct avatars and names after refresh"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

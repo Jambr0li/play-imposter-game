@@ -30,6 +30,7 @@ export default defineSchema({
     gameCode: v.string(),
     playerId: v.string(),
     playerName: v.string(),
+    avatar: v.string(),
     isReady: v.boolean(),
     isHost: v.boolean(),
     joinedAt: v.number(),

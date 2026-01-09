@@ -21,116 +21,96 @@
       "passes": true
     },
     {
-      "category": "data",
-      "description": "Game has a phase field that tracks current state: lobby, voting, or results",
+      "category": "schema",
+      "description": "Players table has an 'avatar' field that stores a random emoji assigned when they join a game",
       "steps": [
-        "Check the Convex schema has a phase field on the game document",
-        "Verify new games start with phase set to 'lobby'",
-        "Confirm the phase field can be updated via a mutation",
-        "Verify the game page UI can read and display the current phase"
+        "Check convex/schema.ts to verify the players table has an 'avatar' field of type string",
+        "Join a game and verify the player record in the database has an avatar emoji assigned",
+        "Verify the avatar is one of a predefined set of fun emojis (e.g. 🦊🐸🦁🐼🦄🐙🦋🐢🦉🐝)"
       ],
       "passes": true
+    },
+    {
+      "category": "schema",
+      "description": "Messages table exists to store lobby chat messages with gameCode, playerId, playerName, avatar, message, and timestamp",
+      "steps": [
+        "Check convex/schema.ts to verify a 'messages' table exists",
+        "Verify the table has fields: gameCode (string), playerId (string), playerName (string), avatar (string), message (string), sentAt (number)",
+        "Verify there is an index on gameCode for efficient querying"
+      ],
+      "passes": false
+    },
+    {
+      "category": "backend",
+      "description": "Backend mutation exists to send a chat message in the lobby",
+      "steps": [
+        "Verify a 'sendMessage' mutation exists in convex/games.ts or convex/chat.ts",
+        "The mutation should accept gameCode, playerId, and message as arguments",
+        "The mutation should validate the player is in the game",
+        "The mutation should store the message with the player's name and avatar",
+        "The mutation should update the game's lastActivityAt timestamp"
+      ],
+      "passes": false
+    },
+    {
+      "category": "backend",
+      "description": "Backend query exists to fetch chat messages for a game lobby",
+      "steps": [
+        "Verify a 'getMessages' query exists that accepts a gameCode",
+        "The query should return messages ordered by sentAt (oldest first)",
+        "The query should return playerName, avatar, message, and sentAt for each message",
+        "Test by calling the query and verifying it returns the expected format"
+      ],
+      "passes": false
+    },
+    {
+      "category": "frontend",
+      "description": "Chat UI component displays messages with player avatar emoji, name, and message content",
+      "steps": [
+        "Navigate to a game lobby",
+        "Verify there is a chat section visible in the waiting room",
+        "Verify each message displays: the player's emoji avatar, their name, and their message",
+        "Verify messages are visually distinguishable (e.g. own messages styled differently)",
+        "Verify the chat area scrolls when there are many messages"
+      ],
+      "passes": false
+    },
+    {
+      "category": "frontend",
+      "description": "Chat input allows players to type and send messages",
+      "steps": [
+        "Navigate to a game lobby",
+        "Verify there is a text input field for typing messages",
+        "Type a message and press Enter (or click send button) to send",
+        "Verify the message appears in the chat immediately after sending",
+        "Verify the input field clears after sending a message",
+        "Verify empty messages cannot be sent"
+      ],
+      "passes": false
     },
     {
       "category": "functional",
-      "description": "Host sees a 'VOTE NOW' button that transitions the game to voting phase",
+      "description": "Chat messages sync in real-time across all players in the lobby",
       "steps": [
-        "Join a game as the host",
-        "Verify a 'VOTE NOW' button is visible only to the host",
-        "Click the button and verify the game phase changes to 'voting'",
-        "Join the same game as a non-host player and verify they do NOT see the 'VOTE NOW' button",
-        "Verify all players see the UI update when voting phase begins"
+        "Open a game lobby in two different browser tabs as different players",
+        "Send a message from Player 1",
+        "Verify Player 2 sees the message appear in real-time without refreshing",
+        "Send a message from Player 2",
+        "Verify Player 1 sees that message appear in real-time",
+        "Verify both players see the correct avatar emoji and name for each message"
       ],
-      "passes": true
-    },
-    {
-      "category": "ui",
-      "description": "During voting phase, all players see a list of all players they can vote for",
-      "steps": [
-        "Trigger voting phase as host",
-        "Verify all players (including host) see a voting interface",
-        "Verify the voting interface shows a list of all player names",
-        "Verify each player name has a way to select/vote for them (button or radio)",
-        "Verify players can see their own name in the list"
-      ],
-      "passes": true
+      "passes": false
     },
     {
       "category": "functional",
-      "description": "Players can submit a vote for who they think is the imposter",
+      "description": "Chat messages persist after page refresh",
       "steps": [
-        "During voting phase, select a player from the list",
-        "Click to submit the vote",
-        "Verify the vote is recorded in the database",
-        "Verify the UI shows confirmation that the vote was cast",
-        "Verify a player cannot change their vote after submitting"
+        "Navigate to a game lobby and send a few chat messages",
+        "Refresh the page",
+        "Verify all previously sent messages are still visible",
+        "Verify the messages display with correct avatars and names after refresh"
       ],
-      "passes": true
-    },
-    {
-      "category": "ui",
-      "description": "Voting phase shows which players have voted (but not who they voted for)",
-      "steps": [
-        "During voting phase with multiple players",
-        "Have one player submit their vote",
-        "Verify all players can see an indicator showing that player has voted",
-        "Verify the actual vote choice is NOT revealed to other players",
-        "Have remaining players vote and verify indicators update in real-time"
-      ],
-      "passes": true
-    },
-    {
-      "category": "functional",
-      "description": "After all players vote, game transitions to results phase and reveals the outcome",
-      "steps": [
-        "Have all players in the game submit their votes",
-        "Verify the game automatically transitions to 'results' phase",
-        "Verify the results show who received the most votes",
-        "Verify the results reveal whether that player was the imposter or not",
-        "Verify all players see the same results simultaneously"
-      ],
-      "passes": true
-    },
-    {
-      "category": "functional",
-      "description": "Host sees a 'Done' button in results phase that resets the game to lobby",
-      "steps": [
-        "In results phase, verify the host sees a 'Done' button",
-        "Verify non-host players do NOT see the 'Done' button",
-        "Click 'Done' as host and verify the game phase resets to 'lobby'",
-        "Verify all votes are cleared for the new round",
-        "Verify all players are returned to the lobby view"
-      ],
-      "passes": true
-    },
-    {"category": "ui",
-      "description": "Make Join game button red",
-      "steps": [
-        "Verify the Join game button is red"
-      ],
-      "passes": true
-    },
-    {"category": "ui",
-      "description": "Make Join game button blue on the Join Game screen",
-      "steps": [
-        "Verify the Join game button is red"
-      ],
-      "passes": true
-    },
-    {"category": "ui",
-      "description": "Make Back button green on the Join Game screen",
-      "steps": [
-        "Verify the Join game button is red"
-      ],
-      "passes": true
-    },
-    {"category": "tests",
-      "description": "Write a playwright test that makes sure that the two buttons on the home page navigate to the correct pages",
-      "steps": [
-        "Verify the Join game button navigates to the /join screen",
-        "Verify the Host game button navigates to the /host screen"
-      ],
-      "passes": true
+      "passes": false
     }
   ]
 }

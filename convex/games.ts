@@ -224,6 +224,14 @@ function getMaxImposterCount(playerCount: number): number {
   return Math.max(1, playerCount - 2);
 }
 
+// Predefined set of fun avatar emojis
+const AVATAR_EMOJIS = ["🦊", "🐸", "🦁", "🐼", "🦄", "🐙", "🦋", "🐢", "🦉", "🐝"];
+
+// Helper function to get a random avatar emoji
+function getRandomAvatar(): string {
+  return AVATAR_EMOJIS[Math.floor(Math.random() * AVATAR_EMOJIS.length)];
+}
+
 // Helper function to get a random word with category
 function getRandomWordWithCategory(
   preferredCategory?: string,
@@ -330,6 +338,7 @@ export const createGame = mutation({
       gameCode: code,
       playerId: args.hostId,
       playerName: args.hostName,
+      avatar: getRandomAvatar(),
       isReady: false,
       isHost: true,
       joinedAt: Date.now(),
@@ -387,6 +396,7 @@ export const joinGame = mutation({
       gameCode: game.code,
       playerId: args.playerId,
       playerName: args.playerName,
+      avatar: getRandomAvatar(),
       isReady: false,
       isHost: false,
       joinedAt: Date.now(),

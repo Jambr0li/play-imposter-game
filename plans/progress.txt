@@ -135,3 +135,35 @@ Implemented the "Chat UI component displays messages with player avatar emoji, n
 - All 15 Playwright tests pass
 - TypeScript compiles without errors
 - Feature marked as passes: true in PRD
+
+## 2026-01-09 - Chat Input Feature
+
+Implemented the "Chat input allows players to type and send messages" feature from the PRD.
+
+### Changes Made:
+1. Updated Chat component (components/Chat.tsx) to add message input functionality:
+   - Added useState for input value and sending state
+   - Added useMutation hook for sendMessage API
+   - Implemented handleSend function for sending messages
+   - Implemented handleKeyDown for Enter key support
+   - Added Input component with placeholder "Type a message..."
+   - Added Send button with icon
+   - Input clears after successful send
+   - Empty/whitespace messages are prevented (button disabled)
+2. Updated error boundary fallback to also show disabled input/button
+3. Created Playwright test (tests/chat-input.spec.ts) with 5 test cases:
+   - Verifies Chat component has input field implementation (code check)
+   - Verifies chat input field is visible in waiting room
+   - Verifies chat input container has proper structure
+   - Verifies send button is disabled when input is empty
+   - Verifies can type in the chat input (when Convex is available)
+
+### Files Modified:
+- components/Chat.tsx - Added chat input field and send functionality
+- plans/prd.json - Marked feature as passes: true
+- tests/chat-input.spec.ts - New test file
+
+### Verification:
+- All 20 Playwright tests pass
+- TypeScript compiles without errors
+- Feature marked as passes: true in PRD

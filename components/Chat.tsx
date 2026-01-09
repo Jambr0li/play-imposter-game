@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, Component, ReactNode, ErrorInfo } from "react";
-import { useQuery } from "convex/react";
+import { useState, useEffect, useRef, Component, ReactNode, ErrorInfo } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { MessageCircle, Send } from "lucide-react";
 
 // Error boundary to catch rendering errors from Convex queries
 class ChatErrorBoundary extends Component<
@@ -45,6 +47,23 @@ class ChatErrorBoundary extends Component<
                 Chat is loading...
               </p>
             </div>
+            {/* Input field even in error state */}
+            <div className="flex items-center gap-2 p-3 border-t" data-testid="chat-input-container">
+              <Input
+                type="text"
+                placeholder="Type a message..."
+                disabled
+                data-testid="chat-input"
+                className="flex-1"
+              />
+              <Button
+                disabled
+                size="icon"
+                data-testid="chat-send-button"
+              >
+                <Send className="size-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       );
@@ -60,7 +79,10 @@ interface ChatProps {
 
 function ChatContent({ gameCode, currentPlayerId }: ChatProps) {
   const messages = useQuery(api.chat.getMessages, { gameCode });
+  const sendMessage = useMutation(api.chat.sendMessage);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -68,6 +90,32 @@ function ChatContent({ gameCode, currentPlayerId }: ChatProps) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleSend = async () => {
+    const trimmedMessage = inputValue.trim();
+    if (!trimmedMessage || isSending) return;
+
+    setIsSending(true);
+    try {
+      await sendMessage({
+        gameCode,
+        playerId: currentPlayerId,
+        message: trimmedMessage,
+      });
+      setInputValue(""); // Clear input after successful send
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
   return (
     <Card>
@@ -128,6 +176,28 @@ function ChatContent({ gameCode, currentPlayerId }: ChatProps) {
               </div>
             );
           })}
+        </div>
+
+        {/* Input field for sending messages */}
+        <div className="flex items-center gap-2 p-3 border-t" data-testid="chat-input-container">
+          <Input
+            type="text"
+            placeholder="Type a message..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isSending}
+            data-testid="chat-input"
+            className="flex-1"
+          />
+          <Button
+            onClick={handleSend}
+            disabled={!inputValue.trim() || isSending}
+            size="icon"
+            data-testid="chat-send-button"
+          >
+            <Send className="size-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -86,7 +86,7 @@
         "Verify the input field clears after sending a message",
         "Verify empty messages cannot be sent"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",

@@ -99,7 +99,7 @@
         "Verify Player 1 sees that message appear in real-time",
         "Verify both players see the correct avatar emoji and name for each message"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "functional",

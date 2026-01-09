@@ -77,3 +77,30 @@ Implemented the "Backend mutation exists to send a chat message in the lobby" fe
 - All 11 Playwright tests pass
 - TypeScript compiles without errors
 - Feature marked as passes: true in PRD
+
+## 2026-01-09 - Get Messages Query Feature
+
+Implemented the "Backend query exists to fetch chat messages for a game lobby" feature from the PRD.
+
+### Changes Made:
+1. Added getMessages query to convex/chat.ts
+2. Query accepts gameCode as an argument
+3. Returns messages ordered by sentAt (oldest first)
+4. Returns playerName, avatar, message, and sentAt for each message
+5. Uses the by_game index for efficient querying
+6. Created Playwright test (tests/get-messages.spec.ts) to verify:
+   - getMessages query exists with correct structure
+   - Query accepts gameCode argument
+   - Query uses by_game index
+   - Query sorts by sentAt ascending
+   - Query returns required fields
+
+### Files Modified:
+- convex/chat.ts - Added getMessages query
+- plans/prd.json - Marked feature as passes: true
+- tests/get-messages.spec.ts - New test file
+
+### Verification:
+- All 13 Playwright tests pass
+- TypeScript compiles without errors
+- Feature marked as passes: true in PRD

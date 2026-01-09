@@ -61,7 +61,7 @@
         "The query should return playerName, avatar, message, and sentAt for each message",
         "Test by calling the query and verifying it returns the expected format"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "frontend",

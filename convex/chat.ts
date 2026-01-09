@@ -1,6 +1,31 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+// Get chat messages for a game lobby
+export const getMessages = query({
+  args: {
+    gameCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const normalizedCode = args.gameCode.toUpperCase();
+
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_game", (q) => q.eq("gameCode", normalizedCode))
+      .collect();
+
+    // Sort by sentAt (oldest first) and return required fields
+    return messages
+      .sort((a, b) => a.sentAt - b.sentAt)
+      .map((msg) => ({
+        playerName: msg.playerName,
+        avatar: msg.avatar,
+        message: msg.message,
+        sentAt: msg.sentAt,
+      }));
+  },
+});
+
 // Send a chat message in the lobby
 export const sendMessage = mutation({
   args: {

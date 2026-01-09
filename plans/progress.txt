@@ -1,333 +1,79 @@
-
-## 2026-01-08 - Feature: Game phase field implementation
-
-**Feature**: Game has a phase field that tracks current state: lobby, voting, or results
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Added optional `phase` field to game schema in convex/schema.ts (union type: "lobby" | "voting" | "results")
-- Updated createGame mutation to initialize new games with phase="lobby"
-- Created new updateGamePhase mutation to allow transitioning between phases
-- Modified restartGame mutation to reset phase back to "lobby"
-- Added phase display to the game UI in both waiting room and playing views
-
-**Testing**:
-- ✅ New games start with phase set to 'lobby'
-- ✅ Phase can be updated via mutation to 'voting' and 'results'
-- ✅ Phase persists correctly in the database after updates
-- ✅ UI displays the current phase to users
-
-**Commit**: fc94046 - Add game phase field to track voting and results states
-
----
-
-## 2026-01-08 - Feature: VOTE NOW button for host
-
-**Feature**: Host sees a 'VOTE NOW' button that transitions the game to voting phase
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Added VOTE NOW button in playing phase UI (app/game/[code]/page.tsx:388-397)
-- Button is only visible to the host when game phase is "lobby" or undefined
-- Imported and wired up updateGamePhase mutation
-- Created handleVoteNow handler function that transitions phase to "voting"
-- Fixed startGame mutations to initialize phase="lobby" when game begins (convex/games.ts:468, 533)
-- Button positioned between Players list and Start New Round button
-
-**Testing**:
-- ✅ Host sees VOTE NOW button during playing phase (when game.status === "playing" && phase === "lobby")
-- ✅ Non-host players do NOT see the VOTE NOW button
-- ✅ Clicking button successfully transitions game phase to "voting"
-- ✅ Phase indicator updates to show "Phase: voting" after clicking
-- ✅ All players see the phase change in real-time via Convex reactivity
-- ✅ Button disappears after phase transitions to voting
-
-**Commit**: 799e23e - Add VOTE NOW button for host to transition game to voting phase
-
----
-
-## 2026-01-08 - Feature: Voting phase player list UI
-
-**Feature**: During voting phase, all players see a list of all players they can vote for
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Added voting phase UI in main game page (app/game/[code]/page.tsx:312-388)
-- Created conditional rendering when game.phase === "voting" within the playing phase
-- Displayed "Voting Phase" card with title and description
-- Rendered complete list of all players with individual vote buttons
-- Each player button shows player name with "(You)" indicator for current player
-- Host badge displayed for host player in voting list
-- Added voting phase view to PlayerSimulator component (components/PlayerSimulator.tsx:97-136)
-- Test mode now properly displays voting interface for all simulated players
-
-**Testing**:
-- ✅ All players (including host) see the voting interface when phase is "voting"
-- ✅ Voting interface shows a list of all player names
-- ✅ Each player name has a button to select/vote for them
-- ✅ Players can see their own name in the list with "(You)" indicator
-- ✅ Host badge displays correctly in the voting list
-- ✅ UI updates in real-time for all players via Convex reactivity
-
-**Commit**: e2a2924 - Add voting phase UI showing list of all players
-
-**Next feature**: Players can submit a vote for who they think is the imposter
-
----
-
-## 2026-01-08 - Feature: Player vote submission
-
-**Feature**: Players can submit a vote for who they think is the imposter
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Added votes table to Convex schema (convex/schema.ts:40-47) with fields: gameCode, voterId, votedForId, submittedAt
-- Created indexes: by_game (gameCode) and by_voter (gameCode, voterId) for efficient querying
-- Added submitVote mutation (convex/games.ts:889-963) with comprehensive validation:
-  - Verifies game exists and is in voting phase
-  - Checks both voter and voted-for player are in the game
-  - Prevents duplicate voting by checking for existing votes
-  - Throws error if player tries to change vote
-- Added getPlayerVote query (convex/games.ts:965-978) to check if player has voted
-- Updated main game page (app/game/[code]/page.tsx):
-  - Imported submitVote mutation and getPlayerVote query
-  - Added handleSubmitVote handler function
-  - Modified voting phase UI to show vote buttons that call handleSubmitVote
-  - Added vote confirmation UI with green checkmark when vote is submitted
-  - Displays "Vote Submitted" message and "Waiting for other players to vote..."
-  - Vote button list hidden after voting, replaced with confirmation screen
-- Updated PlayerSimulator component (components/PlayerSimulator.tsx):
-  - Added submitVote mutation and getPlayerVote query
-  - Added handleSubmitVote handler
-  - Updated voting phase UI to support vote submission in test mode
-  - Shows confirmation checkmark after voting for simulated players
-
-**Testing**:
-- ✅ Vote can be submitted by clicking on a player name during voting phase
-- ✅ Vote is recorded in the database (votes table with proper indexes created)
-- ✅ UI shows green checkmark and "Vote Submitted" confirmation after voting
-- ✅ Vote buttons are replaced with confirmation message after submission
-- ✅ Player cannot change vote after submitting (mutation throws error)
-- ✅ Validation ensures only players in the game can vote
-- ✅ Validation ensures only valid targets can be voted for
-- ✅ PlayerSimulator component supports voting in test mode
-
-**Commit**: 5ece2ba - Add player vote submission functionality
-
-**Next feature**: Voting phase shows which players have voted (but not who they voted for)
-
----
-
-## 2026-01-08 - Feature: Voting indicators showing vote status
-
-**Feature**: Voting phase shows which players have voted (but not who they voted for)
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Added getVoters query in convex/games.ts (convex/games.ts:982-997) that returns array of voter IDs
-- Query retrieves all votes for a game but only returns voter IDs, maintaining vote privacy
-- Updated main game page (app/game/[code]/page.tsx):
-  - Added voters query using getVoters (line 89-92)
-  - Modified voting phase UI to display voting indicators (line 374, 390-395)
-  - Added green "Voted" badge with checkmark icon next to players who have voted
-  - Badge styling: bg-green-50 text-green-700 border-green-200
-- Updated PlayerSimulator component (components/PlayerSimulator.tsx):
-  - Added voters query using getVoters (line 41-43)
-  - Modified voting phase UI to show green checkmark icon for voters (line 153, 167-169)
-  - Simpler indicator for test mode: just a green checkmark icon
-
-**Testing**:
-- ✅ Voting indicators (green badge/checkmark) appear when players submit votes
-- ✅ Indicators update in real-time for all players via Convex reactivity
-- ✅ Vote privacy maintained: only shows WHO voted, not their vote choice
-- ✅ All players see the same voting status indicators simultaneously
-- ✅ Works correctly in both main game view and PlayerSimulator test mode
-- ✅ Indicators disappear when player has already voted (they see confirmation screen)
-
-**Commit**: 4e60234 - Add voting indicators showing which players have voted
-
-**Next feature**: After all players vote, game transitions to results phase and reveals the outcome
-
----
-
-## 2026-01-08 - Feature: Automatic results phase after all votes submitted
-
-**Feature**: After all players vote, game transitions to results phase and reveals the outcome
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Modified submitVote mutation in convex/games.ts (lines 961-977):
-  - Added logic to check if all players have voted after each vote submission
-  - Automatically transitions game phase to "results" when vote count equals player count
-  - Query all players and votes, compare lengths to determine completion
-- Added getVotingResults query in convex/games.ts (lines 1017-1105):
-  - Calculates vote tally for each player who received votes
-  - Determines winner by finding player(s) with most votes
-  - Implements tie-breaking: alphabetical sort by player name
-  - Checks if voted-out player was an imposter
-  - Returns comprehensive results: votedOutPlayerId, votedOutPlayerName, votedOutWasImposter, maxVotes, isTie, voteDetails array, imposterIds, totalVotes, totalPlayers
-- Added results phase UI to main game page (app/game/[code]/page.tsx:94-96, 453-585):
-  - Added votingResults query that fetches data when phase is "results"
-  - Created results phase section showing:
-    - "Results" card with vote tally for all players
-    - Vote counts displayed with badges (e.g., "2 votes")
-    - Most voted player prominently displayed
-    - Tie indicator if applicable ("Tie resolved alphabetically")
-    - Success/failure panel: green background with "✓ SUCCESS!" if imposter caught, red background with "✗ FAILED!" otherwise
-    - Reveal section showing all imposters with red badges
-- Added results phase support to PlayerSimulator component (components/PlayerSimulator.tsx:45-48, 187-267):
-  - Added votingResults query for test mode
-  - Created compact results display showing vote tallies, success/failure status, and imposter reveals
-  - Maintains consistent visual design with main game UI
-
-**Testing**:
-- ✅ All players can submit votes during voting phase
-- ✅ Game automatically transitions to "results" phase when last player votes
-- ✅ No manual action required - transition happens immediately via mutation
-- ✅ Results screen shows complete vote tally with counts for each player
-- ✅ Results correctly identify player with most votes (alphabetical tie-breaking works)
-- ✅ Results reveal whether voted-out player was the imposter
-- ✅ Success screen (green) displays when imposter caught
-- ✅ Failure screen (red) displays when non-imposter voted out
-- ✅ All imposters are revealed at the end
-- ✅ All players see results simultaneously via Convex reactivity
-- ✅ Works correctly in both main game view and PlayerSimulator test mode
-
-**Commit**: 4d886e0 - Add automatic results phase after voting completes
-
-**Next feature**: Host sees a 'Done' button in results phase that resets the game to lobby
-
----
-
-## 2026-01-08 - Feature: Done button to reset game from results to lobby
-
-**Feature**: Host sees a 'Done' button in results phase that resets the game to lobby
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Added resetToLobby mutation in convex/games.ts (lines 1107-1167):
-  - Validates caller is the host
-  - Verifies game is in results phase before allowing reset
-  - Resets all players to isReady: false
-  - Clears all votes from the votes table for the game
-  - Resets game status to "waiting" and phase to "lobby"
-  - Clears imposterIds to prepare for next round
-- Added Done button in main game page (app/game/[code]/page.tsx):
-  - Imported resetToLobby mutation (line 83)
-  - Created handleDone handler function (lines 256-268)
-  - Added Done button in results phase UI (lines 567-576)
-  - Button is only visible when game.hostId === playerId (host check)
-  - Button is full width with large size, positioned before Leave Game button
-- Added Done button support in PlayerSimulator component (components/PlayerSimulator.tsx):
-  - Imported resetToLobby mutation (line 35)
-  - Created handleDone handler function (lines 97-106)
-  - Added Done button in results phase UI (lines 277-286)
-  - Button visible only to host players in test mode
-- Updated prd.json to mark feature as passes: true
-
-**Testing**:
-- ✅ Host sees "Done" button in results phase
-- ✅ Non-host players do NOT see the "Done" button
-- ✅ Clicking "Done" as host resets game phase to "lobby"
-- ✅ Clicking "Done" resets game status to "waiting"
-- ✅ All votes are cleared from database when Done is clicked
-- ✅ All players are reset to not ready (isReady: false)
-- ✅ All players see the lobby view after reset via Convex reactivity
-- ✅ imposterIds are cleared to prepare for next round
-- ✅ Works correctly in both main game view and PlayerSimulator test mode
-
-**Commit**: 22cfe01 - Add Done button for host to reset game from results to lobby
-
----
-
-## 2026-01-08 - Feature: Make Join game button red
-
-**Feature**: Make Join game button red
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Updated Join Game button in app/join/page.tsx (line 154)
-- Added Tailwind CSS classes: bg-red-600 hover:bg-red-700
-- Button now displays with red background and darker red on hover
-
-**Testing**:
-- ✅ Build compiles successfully with no errors
-- ✅ Join game button has red background color (bg-red-600)
-- ✅ Button hover state shows darker red (bg-red-700)
-
-**Commit**: 09e366d - Make Join game button red
-
----
-
-## 2026-01-08 - Feature: Make Join game button blue
-
-**Feature**: Make Join game button blue on the Join Game screen
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Updated Join Game button in app/join/page.tsx (line 154)
-- Changed Tailwind CSS classes from bg-red-600 hover:bg-red-700 to bg-blue-600 hover:bg-blue-700
-- Button now displays with blue background and darker blue on hover
-
-**Testing**:
-- ✅ Build compiles successfully with no errors
-- ✅ Join game button has blue background color (bg-blue-600)
-- ✅ Button hover state shows darker blue (bg-blue-700)
-
-**Commit**: f8424d8 - Make Join game button blue
-
----
-
-## 2026-01-08 - Feature: Make Back button green
-
-**Feature**: Make Back button green on the Join Game screen
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Updated Back button in app/join/page.tsx (line 159-164)
-- Removed variant="ghost" and added Tailwind CSS classes: bg-green-600 hover:bg-green-700
-- Button now displays with green background and darker green on hover
-
-**Testing**:
-- ✅ Build compiles successfully with no errors
-- ✅ Back button has green background color (bg-green-600)
-- ✅ Button hover state shows darker green (bg-green-700)
-
-**Commit**: 0132163 - Make Back button green on the Join Game screen
-
----
-
-## 2026-01-09 - Feature: Playwright test for home page navigation
-
-**Feature**: Write a playwright test that makes sure that the two buttons on the home page navigate to the correct pages
-
-**Status**: ✅ Complete
-
-**Changes made**:
-- Created new test file tests/home-navigation.spec.ts
-- Added test "Join Game button navigates to /join screen" that:
-  - Navigates to home page
-  - Clicks the "Join Game" link
-  - Verifies navigation to /join
-- Added test "Host Game button navigates to /host screen" that:
-  - Navigates to home page
-  - Clicks the "Host Game" link
-  - Verifies navigation to /host
-
-**Testing**:
-- ✅ Both tests pass with `npm run test:e2e`
-- ✅ Join Game button correctly navigates to /join
-- ✅ Host Game button correctly navigates to /host
-
-**Commit**: fb501c0 - Add Playwright test for home page button navigation
-
+## 2026-01-09 - Player Avatar Feature
+
+Implemented the "Players table has an 'avatar' field" feature from the PRD.
+
+### Changes Made:
+1. Added 'avatar' field (string type) to players table schema in convex/schema.ts
+2. Created AVATAR_EMOJIS constant with predefined emoji set: 🦊🐸🦁🐼🦄🐙🦋🐢🦉🐝
+3. Added getRandomAvatar() helper function in convex/games.ts
+4. Updated createGame mutation to assign random avatar to host
+5. Updated joinGame mutation to assign random avatar to joining players
+6. Created Playwright test (tests/player-avatar.spec.ts) with two test cases:
+   - Verifies avatar assignment when creating a game
+   - Verifies avatar assignment when joining a game
+
+### Files Modified:
+- convex/schema.ts - Added avatar field to players table
+- convex/games.ts - Added avatar assignment logic
+- plans/prd.json - Marked feature as passes: true
+- tests/player-avatar.spec.ts - New test file
+
+### Verification:
+- All 8 Playwright tests pass
+- TypeScript compiles without errors
+- Feature marked as passes: true in PRD
+
+## 2026-01-09 - Messages Table Schema Feature
+
+Implemented the "Messages table exists to store lobby chat messages" feature from the PRD.
+
+### Changes Made:
+1. Added 'messages' table to convex/schema.ts with fields:
+   - gameCode (string)
+   - playerId (string)
+   - playerName (string)
+   - avatar (string)
+   - message (string)
+   - sentAt (number)
+2. Added index on gameCode for efficient querying: `.index("by_game", ["gameCode"])`
+3. Created Playwright test (tests/messages-schema.spec.ts) to verify:
+   - Messages table exists in schema
+   - All required fields are present
+   - Index on gameCode is defined
+
+### Files Modified:
+- convex/schema.ts - Added messages table definition
+- plans/prd.json - Marked feature as passes: true
+- tests/messages-schema.spec.ts - New test file
+
+### Verification:
+- All 9 Playwright tests pass
+- TypeScript compiles without errors
+- Feature marked as passes: true in PRD
+
+## 2026-01-09 - Send Message Mutation Feature
+
+Implemented the "Backend mutation exists to send a chat message in the lobby" feature from the PRD.
+
+### Changes Made:
+1. Created new file convex/chat.ts with sendMessage mutation
+2. Mutation accepts gameCode, playerId, and message as arguments
+3. Validates that the player exists in the game before accepting messages
+4. Stores the message with the player's name and avatar from the players table
+5. Updates the game's lastActivityAt timestamp on each message sent
+6. Created Playwright test (tests/send-message.spec.ts) to verify:
+   - sendMessage mutation exists with correct structure
+   - Mutation accepts required arguments
+   - Mutation validates player is in game
+   - Mutation stores messages with player info
+   - Mutation updates lastActivityAt
+
+### Files Modified:
+- convex/chat.ts - New file with sendMessage mutation
+- plans/prd.json - Marked feature as passes: true
+- tests/send-message.spec.ts - New test file
+
+### Verification:
+- All 11 Playwright tests pass
+- TypeScript compiles without errors
+- Feature marked as passes: true in PRD

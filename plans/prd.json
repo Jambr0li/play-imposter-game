@@ -38,7 +38,7 @@
         "Verify the table has fields: gameCode (string), playerId (string), playerName (string), avatar (string), message (string), sentAt (number)",
         "Verify there is an index on gameCode for efficient querying"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "backend",

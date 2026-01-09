@@ -46,5 +46,14 @@ export default defineSchema({
   })
     .index("by_game", ["gameCode"])
     .index("by_voter", ["gameCode", "voterId"]),
+
+  messages: defineTable({
+    gameCode: v.string(),
+    playerId: v.string(),
+    playerName: v.string(),
+    avatar: v.string(),
+    message: v.string(),
+    sentAt: v.number(),
+  }).index("by_game", ["gameCode"]),
 });
 

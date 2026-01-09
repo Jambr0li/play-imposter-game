@@ -50,7 +50,7 @@
         "The mutation should store the message with the player's name and avatar",
         "The mutation should update the game's lastActivityAt timestamp"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "backend",

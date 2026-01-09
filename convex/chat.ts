@@ -18,6 +18,7 @@ export const getMessages = query({
     return messages
       .sort((a, b) => a.sentAt - b.sentAt)
       .map((msg) => ({
+        playerId: msg.playerId,
         playerName: msg.playerName,
         avatar: msg.avatar,
         message: msg.message,

@@ -46,6 +46,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Chat } from "@/components/Chat";
 
 export default function GameRoom() {
   const params = useParams();
@@ -956,6 +957,9 @@ export default function GameRoom() {
                 ))}
               </div>
             </div>
+
+            {/* Chat Section */}
+            <Chat gameCode={code} currentPlayerId={playerId} />
 
             {totalPlayers < 3 && (
               <div className="flex items-center gap-2 border px-4 py-3 rounded-lg text-sm">

@@ -73,7 +73,7 @@
         "Verify messages are visually distinguishable (e.g. own messages styled differently)",
         "Verify the chat area scrolls when there are many messages"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "category": "frontend",

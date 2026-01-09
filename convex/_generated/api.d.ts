@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as chat from "../chat.js";
 import type * as crons from "../crons.js";
 import type * as games from "../games.js";
 
@@ -26,6 +27,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  chat: typeof chat;
   crons: typeof crons;
   games: typeof games;
 }>;

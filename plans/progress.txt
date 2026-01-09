@@ -104,3 +104,34 @@ Implemented the "Backend query exists to fetch chat messages for a game lobby" f
 - All 13 Playwright tests pass
 - TypeScript compiles without errors
 - Feature marked as passes: true in PRD
+
+## 2026-01-09 - Chat UI Component Feature
+
+Implemented the "Chat UI component displays messages with player avatar emoji, name, and message content" feature from the PRD.
+
+### Changes Made:
+1. Created new Chat component at components/Chat.tsx
+2. Component displays messages with avatar emoji, player name, and message content
+3. Own messages are styled differently (reversed layout, primary color background)
+4. Chat area has scrollable container with fixed height (h-48)
+5. Auto-scrolls to bottom when new messages arrive
+6. Added error boundary to gracefully handle Convex API errors
+7. Shows loading/empty states appropriately
+8. Updated convex/_generated/api.d.ts to include chat module exports
+9. Integrated Chat component into waiting room in app/game/[code]/page.tsx
+10. Created Playwright test (tests/chat-ui.spec.ts) with two test cases:
+    - Verifies chat section is visible in waiting room
+    - Verifies chat messages area has scrollable container
+
+### Files Modified:
+- components/Chat.tsx - New Chat UI component
+- app/game/[code]/page.tsx - Integrated Chat component into waiting room
+- convex/_generated/api.d.ts - Added chat module exports
+- convex/chat.ts - Added playerId to getMessages return value
+- plans/prd.json - Marked feature as passes: true
+- tests/chat-ui.spec.ts - New test file
+
+### Verification:
+- All 15 Playwright tests pass
+- TypeScript compiles without errors
+- Feature marked as passes: true in PRD

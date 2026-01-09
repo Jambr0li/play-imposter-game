@@ -285,3 +285,49 @@
 
 **Commit**: f8424d8 - Make Join game button blue
 
+---
+
+## 2026-01-08 - Feature: Make Back button green
+
+**Feature**: Make Back button green on the Join Game screen
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Updated Back button in app/join/page.tsx (line 159-164)
+- Removed variant="ghost" and added Tailwind CSS classes: bg-green-600 hover:bg-green-700
+- Button now displays with green background and darker green on hover
+
+**Testing**:
+- ✅ Build compiles successfully with no errors
+- ✅ Back button has green background color (bg-green-600)
+- ✅ Button hover state shows darker green (bg-green-700)
+
+**Commit**: 0132163 - Make Back button green on the Join Game screen
+
+---
+
+## 2026-01-09 - Feature: Playwright test for home page navigation
+
+**Feature**: Write a playwright test that makes sure that the two buttons on the home page navigate to the correct pages
+
+**Status**: ✅ Complete
+
+**Changes made**:
+- Created new test file tests/home-navigation.spec.ts
+- Added test "Join Game button navigates to /join screen" that:
+  - Navigates to home page
+  - Clicks the "Join Game" link
+  - Verifies navigation to /join
+- Added test "Host Game button navigates to /host screen" that:
+  - Navigates to home page
+  - Clicks the "Host Game" link
+  - Verifies navigation to /host
+
+**Testing**:
+- ✅ Both tests pass with `npm run test:e2e`
+- ✅ Join Game button correctly navigates to /join
+- ✅ Host Game button correctly navigates to /host
+
+**Commit**: fb501c0 - Add Playwright test for home page button navigation
+

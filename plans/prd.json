@@ -123,6 +123,14 @@
         "Verify the Join game button is red"
       ],
       "passes": true
+    },
+    {"category": "tests",
+      "description": "Write a playwright test that makes sure that the two buttons on the home page navigate to the correct pages",
+      "steps": [
+        "Verify the Join game button navigates to the /join screen",
+        "Verify the Host game button navigates to the /host screen"
+      ],
+      "passes": true
     }
   ]
 }

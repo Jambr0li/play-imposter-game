@@ -47,6 +47,15 @@ export default defineSchema({
     .index("by_game", ["gameCode"])
     .index("by_voter", ["gameCode", "voterId"]),
 
+  gameStats: defineTable({
+    gameCode: v.string(),
+    playerCount: v.number(),
+    imposterCount: v.number(),
+    category: v.string(),
+    word: v.string(),
+    playedAt: v.number(),
+  }).index("by_playedAt", ["playedAt"]),
+
   messages: defineTable({
     gameCode: v.string(),
     playerId: v.string(),

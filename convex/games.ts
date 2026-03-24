@@ -482,6 +482,15 @@ export const setReady = mutation({
           imposterIds,
           lastActivityAt: Date.now(),
         });
+
+        await ctx.db.insert("gameStats", {
+          gameCode: args.gameCode,
+          playerCount: allPlayers.length,
+          imposterCount,
+          category,
+          word,
+          playedAt: Date.now(),
+        });
       }
     }
 
@@ -546,6 +555,15 @@ export const startGame = mutation({
       usedWords: updatedUsedWords,
       imposterIds,
       lastActivityAt: Date.now(),
+    });
+
+    await ctx.db.insert("gameStats", {
+      gameCode: args.gameCode,
+      playerCount: players.length,
+      imposterCount,
+      category,
+      word,
+      playedAt: Date.now(),
     });
 
     return { success: true };
@@ -1173,6 +1191,23 @@ export const resetToLobby = mutation({
     });
 
     return { success: true };
+  },
+});
+
+// Get game stats for tracking usage over time
+export const getGameStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const stats = await ctx.db
+      .query("gameStats")
+      .withIndex("by_playedAt")
+      .order("desc")
+      .collect();
+
+    return {
+      totalGamesPlayed: stats.length,
+      recentGames: stats,
+    };
   },
 });
 

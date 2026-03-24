@@ -21,6 +21,15 @@ export default defineSchema({
     lastActivityAt: v.number(), // Track last activity for automatic cleanup
   }).index("by_code", ["code"]),
 
+  gameStats: defineTable({
+    gameCode: v.string(),
+    playerCount: v.number(),
+    imposterCount: v.number(),
+    category: v.string(),
+    word: v.string(),
+    playedAt: v.number(),
+  }).index("by_playedAt", ["playedAt"]),
+
   players: defineTable({
     gameCode: v.string(),
     playerId: v.string(),

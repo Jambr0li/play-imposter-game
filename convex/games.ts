@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 
 // Helper function to generate a unique 6-digit code
 function generateGameCode(): string {
@@ -222,6 +223,72 @@ type Category = keyof typeof WORD_CATEGORIES;
 // Helper function to calculate max imposters (should leave at least 2 non-imposters)
 function getMaxImposterCount(playerCount: number): number {
   return Math.max(1, playerCount - 2);
+}
+
+function buildVotingResults(
+  game: Doc<"games">,
+  players: Doc<"players">[],
+  votes: Doc<"votes">[]
+) {
+  const playerMap = new Map(
+    players.map((p) => [p.playerId, { name: p.playerName, id: p.playerId }])
+  );
+
+  const voteTally: Record<string, number> = {};
+  votes.forEach((vote) => {
+    voteTally[vote.votedForId] = (voteTally[vote.votedForId] || 0) + 1;
+  });
+
+  let maxVotes = 0;
+  let playersWithMostVotes: string[] = [];
+
+  Object.entries(voteTally).forEach(([playerId, voteCount]) => {
+    if (voteCount > maxVotes) {
+      maxVotes = voteCount;
+      playersWithMostVotes = [playerId];
+    } else if (voteCount === maxVotes) {
+      playersWithMostVotes.push(playerId);
+    }
+  });
+
+  let votedOutPlayerId: string | null = null;
+  if (playersWithMostVotes.length === 1) {
+    votedOutPlayerId = playersWithMostVotes[0];
+  } else if (playersWithMostVotes.length > 1) {
+    playersWithMostVotes.sort((a, b) => {
+      const nameA = playerMap.get(a)?.name || "";
+      const nameB = playerMap.get(b)?.name || "";
+      return nameA.localeCompare(nameB);
+    });
+    votedOutPlayerId = playersWithMostVotes[0];
+  }
+
+  const imposterIds = game.imposterIds || [];
+  const votedOutWasImposter = votedOutPlayerId
+    ? imposterIds.includes(votedOutPlayerId)
+    : false;
+
+  const voteDetails = Object.entries(voteTally)
+    .map(([playerId, voteCount]) => ({
+      playerId,
+      playerName: playerMap.get(playerId)?.name || "Unknown",
+      voteCount,
+    }))
+    .sort((a, b) => b.voteCount - a.voteCount);
+
+  return {
+    votedOutPlayerId,
+    votedOutPlayerName: votedOutPlayerId
+      ? playerMap.get(votedOutPlayerId)?.name || "Unknown"
+      : null,
+    votedOutWasImposter,
+    maxVotes,
+    isTie: playersWithMostVotes.length > 1,
+    voteDetails,
+    imposterIds,
+    totalVotes: votes.length,
+    totalPlayers: players.length,
+  };
 }
 
 // Predefined set of fun avatar emojis
@@ -853,6 +920,79 @@ export const getPlayers = query({
   },
 });
 
+// Get the full room snapshot needed by the game screen in one subscription.
+export const getGameRoom = query({
+  args: {
+    gameCode: v.string(),
+    playerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const normalizedCode = args.gameCode.toUpperCase();
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_code", (q) => q.eq("code", normalizedCode))
+      .first();
+
+    if (!game) {
+      return {
+        game: null,
+        players: [],
+        playerWord: null,
+        imposterOptions: { min: 1, max: 1, playerCount: 0 },
+        playerVote: null,
+        voters: [],
+        votingResults: null,
+      };
+    }
+
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_game", (q) => q.eq("gameCode", normalizedCode))
+      .order("asc")
+      .collect();
+
+    const playerCount = players.length;
+    const imposterIds = game.imposterIds || [];
+    const isImposter = imposterIds.includes(args.playerId);
+    const playerWord =
+      game.status === "playing"
+        ? {
+            category: game.category,
+            word: isImposter ? null : game.word,
+            isImposter,
+          }
+        : null;
+
+    const shouldReadVotes =
+      game.status === "playing" &&
+      (game.phase === "voting" || game.phase === "results");
+    const votes = shouldReadVotes
+      ? await ctx.db
+          .query("votes")
+          .withIndex("by_game", (q) => q.eq("gameCode", normalizedCode))
+          .collect()
+      : [];
+
+    return {
+      game,
+      players,
+      playerWord,
+      imposterOptions: {
+        min: 1,
+        max: getMaxImposterCount(playerCount),
+        playerCount,
+      },
+      playerVote:
+        votes.find((vote) => vote.voterId === args.playerId) ?? null,
+      voters: votes.map((vote) => vote.voterId),
+      votingResults:
+        game.phase === "results"
+          ? buildVotingResults(game, players, votes)
+          : null,
+    };
+  },
+});
+
 // Get valid imposter count options for a game
 export const getImposterCountOptions = query({
   args: { code: v.string() },
@@ -1069,66 +1209,7 @@ export const getVotingResults = query({
       .withIndex("by_game", (q) => q.eq("gameCode", args.gameCode.toUpperCase()))
       .collect();
 
-    // Create a map of playerId to player info
-    const playerMap = new Map(
-      players.map(p => [p.playerId, { name: p.playerName, id: p.playerId }])
-    );
-
-    // Count votes for each player
-    const voteTally: Record<string, number> = {};
-    votes.forEach(vote => {
-      voteTally[vote.votedForId] = (voteTally[vote.votedForId] || 0) + 1;
-    });
-
-    // Find player(s) with most votes
-    let maxVotes = 0;
-    let playersWithMostVotes: string[] = [];
-
-    Object.entries(voteTally).forEach(([playerId, voteCount]) => {
-      if (voteCount > maxVotes) {
-        maxVotes = voteCount;
-        playersWithMostVotes = [playerId];
-      } else if (voteCount === maxVotes) {
-        playersWithMostVotes.push(playerId);
-      }
-    });
-
-    // Determine the winner (if there's a tie, pick the first one alphabetically by name)
-    let votedOutPlayerId: string | null = null;
-    if (playersWithMostVotes.length === 1) {
-      votedOutPlayerId = playersWithMostVotes[0];
-    } else if (playersWithMostVotes.length > 1) {
-      // Tie-breaker: alphabetical by name
-      playersWithMostVotes.sort((a, b) => {
-        const nameA = playerMap.get(a)?.name || "";
-        const nameB = playerMap.get(b)?.name || "";
-        return nameA.localeCompare(nameB);
-      });
-      votedOutPlayerId = playersWithMostVotes[0];
-    }
-
-    // Check if voted out player was an imposter
-    const imposterIds = game.imposterIds || [];
-    const votedOutWasImposter = votedOutPlayerId ? imposterIds.includes(votedOutPlayerId) : false;
-
-    // Build results object with vote details
-    const voteDetails = Object.entries(voteTally).map(([playerId, voteCount]) => ({
-      playerId,
-      playerName: playerMap.get(playerId)?.name || "Unknown",
-      voteCount,
-    })).sort((a, b) => b.voteCount - a.voteCount); // Sort by vote count descending
-
-    return {
-      votedOutPlayerId,
-      votedOutPlayerName: votedOutPlayerId ? playerMap.get(votedOutPlayerId)?.name || "Unknown" : null,
-      votedOutWasImposter,
-      maxVotes,
-      isTie: playersWithMostVotes.length > 1,
-      voteDetails,
-      imposterIds,
-      totalVotes: votes.length,
-      totalPlayers: players.length,
-    };
+    return buildVotingResults(game, players, votes);
   },
 });
 

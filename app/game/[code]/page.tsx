@@ -62,16 +62,17 @@ export default function GameRoom() {
   const [playerToKick, setPlayerToKick] = useState<{ id: string; name: string } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
-  const game = useQuery(api.games.getGame, code ? { code } : "skip");
-  const players = useQuery(api.games.getPlayers, code ? { code } : "skip");
-  const playerWord = useQuery(
-    api.games.getPlayerWord,
+  const room = useQuery(
+    api.games.getGameRoom,
     code && playerId ? { gameCode: code, playerId } : "skip"
   );
-  const imposterOptions = useQuery(
-    api.games.getImposterCountOptions,
-    code ? { code } : "skip"
-  );
+  const game = room?.game ?? null;
+  const players = room?.players ?? [];
+  const playerWord = room?.playerWord ?? null;
+  const imposterOptions = room?.imposterOptions ?? null;
+  const playerVote = room?.playerVote ?? null;
+  const voters = room?.voters ?? [];
+  const votingResults = room?.votingResults ?? null;
 
   const setReady = useMutation(api.games.setReady);
   const leaveGame = useMutation(api.games.leaveGame);
@@ -82,21 +83,6 @@ export default function GameRoom() {
   const updateGamePhase = useMutation(api.games.updateGamePhase);
   const submitVote = useMutation(api.games.submitVote);
   const resetToLobby = useMutation(api.games.resetToLobby);
-
-  const playerVote = useQuery(
-    api.games.getPlayerVote,
-    code && playerId ? { gameCode: code, playerId } : "skip"
-  );
-
-  const voters = useQuery(
-    api.games.getVoters,
-    code ? { gameCode: code } : "skip"
-  );
-
-  const votingResults = useQuery(
-    api.games.getVotingResults,
-    code && game?.phase === "results" ? { gameCode: code } : "skip"
-  );
 
   useEffect(() => {
     const id = localStorage.getItem("playerId");
@@ -117,7 +103,7 @@ export default function GameRoom() {
     };
   }, [playerId, code, leaveGame]);
 
-  const currentPlayer = players?.find((p) => p.playerId === playerId);
+  const currentPlayer = players.find((p) => p.playerId === playerId);
 
   // Detect if player was kicked (not in players list but game still exists)
   useEffect(() => {
@@ -130,8 +116,8 @@ export default function GameRoom() {
       router.push("/");
     }
   }, [mounted, playerId, game, players, currentPlayer, isLeaving, router]);
-  const readyCount = players?.filter((p) => p.isReady).length || 0;
-  const totalPlayers = players?.length || 0;
+  const readyCount = players.filter((p) => p.isReady).length;
+  const totalPlayers = players.length;
   const allReady = readyCount === totalPlayers && totalPlayers >= 3;
   
   // Generate join URL for QR code
@@ -268,7 +254,7 @@ export default function GameRoom() {
     }
   };
 
-  if (!mounted || game === undefined || isLeaving) {
+  if (!mounted || room === undefined || isLeaving) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
         <div className="max-w-2xl w-full space-y-6">

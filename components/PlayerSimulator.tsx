@@ -22,31 +22,18 @@ export default function PlayerSimulator({
   playerName,
   colorClass = "bg-muted",
 }: PlayerSimulatorProps) {
-  const game = useQuery(api.games.getGame, { code: gameCode });
-  const players = useQuery(api.games.getPlayers, { code: gameCode });
-  const playerWord = useQuery(api.games.getPlayerWord, {
-    gameCode,
-    playerId,
-  });
+  const room = useQuery(api.games.getGameRoom, { gameCode, playerId });
+  const game = room?.game ?? null;
+  const players = room?.players ?? [];
+  const playerWord = room?.playerWord ?? null;
+  const playerVote = room?.playerVote ?? null;
+  const voters = room?.voters ?? [];
+  const votingResults = room?.votingResults ?? null;
 
   const joinGame = useMutation(api.games.joinGame);
   const setReady = useMutation(api.games.setReady);
   const submitVote = useMutation(api.games.submitVote);
   const resetToLobby = useMutation(api.games.resetToLobby);
-
-  const playerVote = useQuery(api.games.getPlayerVote, {
-    gameCode,
-    playerId,
-  });
-
-  const voters = useQuery(api.games.getVoters, {
-    gameCode,
-  });
-
-  const votingResults = useQuery(
-    api.games.getVotingResults,
-    game?.phase === "results" ? { gameCode } : "skip"
-  );
 
   // Auto-join on mount
   useEffect(() => {
@@ -66,7 +53,7 @@ export default function PlayerSimulator({
     return () => clearTimeout(timer);
   }, [gameCode, playerId, playerName, joinGame, game]);
 
-  const currentPlayer = players?.find((p) => p.playerId === playerId);
+  const currentPlayer = players.find((p) => p.playerId === playerId);
 
   const handleToggleReady = async () => {
     if (!currentPlayer) return;
